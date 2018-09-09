@@ -1,0 +1,15 @@
+<launch>
+
+  <group ns="sender">
+    <node pkg="begin" name="sender" type="sender"/>
+  </group>
+
+  <group ns="printer">
+    <node pkg="begin" name="printer" type="printer"/>
+  </group>
+  <!-- <node pkg="turtlesim" name="mimic" type="mimic">
+    <remap from="input" to="turtlesim1/turtle1"/>
+    <remap from="output" to="turtlesim2/turtle1"/>
+  </node> -->
+
+</launch>
