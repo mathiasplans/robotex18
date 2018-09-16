@@ -24,3 +24,7 @@ add_dependencies(talker first_generate_messages_cpp)
 add_executable(listener src/listener.cpp)
 target_link_libraries(listener ${catkin_LIBRARIES})
 add_dependencies(listener first_generate_messages_cpp)
+
+add_executable(file src/file.cpp)
+target_link_libraries(file ${catkin_LIBRARIES})
+add_dependencies(file first_generate_messages_cpp)
