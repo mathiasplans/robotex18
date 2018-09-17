@@ -11,26 +11,31 @@
 #include <cstdlib>
 #include <unistd.h>
 
+
 void StateMachine::state_machine(void){
   /* Main Loop */
-  state_t state = IDLE;
+  
 
-  for(;;){
+  // for(;;){
     /* Referee Signal Handling */
 
     // If stop signale is set, then set to IDLE
     if(stop_signal){
       state = IDLE;
-      continue;
+      return;
     }
 
     /* State Handling */
     switch (state) {
       case IDLE:
         // Start Searching Ball
+        //usleep(1000);
         state = SEARCH_BALL;
+        
         break;
       case SEARCH_BALL:
+        counter++;
+        //std::cout << "Looping\n";
         if(search_for_ball(/* Timeout perhaps */)) state = MOVE_TO_BALL;
         break;
       case SEARCH_BASKET:
@@ -46,7 +51,7 @@ void StateMachine::state_machine(void){
         /* Should never get here, ERROR! */
         break;
     }
-  }
+  // }
 }
 
 void serial_init(int* serial){
@@ -99,18 +104,14 @@ void serial_init(int* serial){
 }
 
 
-StateMachine::StateMachine(void) : state_thread(&StateMachine::state_machine, this) {
+StateMachine::StateMachine(void)/* : state_thread(&StateMachine::state_machine, this) */{
 
   /* Serial communcication */
   /* https://stackoverflow.com/a/18134892 */
-  serial = open("/dev/ttyUSB0", O_RDWR| O_NOCTTY);
-
-  serial_init(&serial);
-
-  state_thread.join();
+  
 }
 
-#define SPIN_SEARCH_SPEED 5
+#define SPIN_SEARCH_SPEED 9
 #define SPIN_CENTER_SPEED 5
 #define MOVING_SPEED      5
 #define POSITION_ERROR    5
@@ -126,8 +127,11 @@ template <typename T> int sgn(T val) {
 bool StateMachine::search_for_ball(){
   // If the robot hasn't found a ball yet
   if(!object_in_sight){
-    std::string command = spin(SPIN_SEARCH_SPEED);
+    std::string command = move(SPIN_SEARCH_SPEED, 0);
+    //std::cout << "Hello\n";
     write(serial, command.c_str(), command.size());
+    std::cout << command << std::endl;
+    usleep (1000000);
     return false;
   }
   // If then robot has found a ball, center in on it
@@ -146,6 +150,7 @@ bool StateMachine::center_on_ball(){
   if(object_position < POSITION_ERROR || object_position > POSITION_ERROR){
     std::string command = spin(SPIN_CENTER_SPEED * sgn(object_position));
     write(serial, command.c_str(), command.size());
+    
     return false;
   }
   // If the ball is at the center of the frame
@@ -177,4 +182,19 @@ bool StateMachine::throw_the_ball(){
   // Move forward and consome the ball
   return false;
 
+}
+
+int StateMachine::init(){
+  std::cout << "Opening serial\n";
+  serial = open("/dev/ttyACM0", O_RDWR | O_NOCTTY);
+  std::cout << strerror(errno) << std::endl;
+  if(serial == -1){
+    return serial;
+  }
+  std::cout << "Serial opened\n";
+
+  serial_init(&serial);
+
+  //state_thread.join();
+  return 0;
 }

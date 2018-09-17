@@ -11,11 +11,12 @@ add_compile_options(-std=c++11)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
+  vision
 )
 
 
-add_message_files(FILES Ball.msg)
-generate_messages(DEPENDENCIES std_msgs)
+# add_message_files(FILES Ball.msg)
+# generate_messages(DEPENDENCIES std_msgs)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)

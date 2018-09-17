@@ -5,7 +5,7 @@
 #include <vector>
 #include "vision/Ball.h"
 
-#define fake_camera true;
+// #define fake_camera false;
 using namespace std;
 using namespace cv;
 const double pi = 3.14159265359;
@@ -56,8 +56,9 @@ int main(int argc, char **argv){
         return -1;
     }
 
-    Scalar greenLower(29, 86, 6);
-    Scalar greenUpper(64, 255, 255); 
+    Scalar greenLower (29, 86, 6);
+Scalar greenUpper(64, 255, 255);
+
 
     //namedWindow( "window", WINDOW_AUTOSIZE );
     
@@ -67,7 +68,7 @@ int main(int argc, char **argv){
     //namedWindow("TestVid", CV_WINDOW_AUTOSIZE);
     int frameCount = 0;
     
-    while(1){
+    while(ros::ok()){
 
         Mat frame;
         
@@ -78,7 +79,7 @@ int main(int argc, char **argv){
             return -1;
         }
 
-        #ifdef fake_camera
+        #ifndef fake_camera
         rotate(frame, frame, ROTATE_90_CLOCKWISE);
         #endif
         
@@ -120,19 +121,20 @@ int main(int argc, char **argv){
 
         int largestIndex = -1;
         float largestRadius = 0;
+        int foundCount = 0;
         
         for( int i = 0; i< contours.size(); i++ ){
             // Filter off too small and non-circular contours
-            if(radius[i] < 10) continue;
-            if(contourArea(contours[i]) < pi * radius[i] * radius[i] * 0.6) continue;
-
+            // if(radius[i] < 10) continue;
+            if(contourArea(contours[i]) < pi * radius[i] * radius[i] * 0.4) continue;
+            foundCount++;
             if(radius[i] > largestRadius){
                 largestIndex = i;
                 largestRadius = radius[i];
             }
-            // drawContours(frame, contours_poly, i, Scalar(0, 0, 255), 2, 8, vector<Vec4i>(), 0, Point() );
-            // circle(frame, center[i], 4, Scalar(0, 0, 0), 2, 8, 0 );
-            // circle(frame, center[i], radius[i], Scalar(0,0,0), 1);
+            drawContours(frame, contours_poly, i, Scalar(0, 0, 255), 2, 8, vector<Vec4i>(), 0, Point() );
+            circle(frame, center[i], 4, Scalar(0, 0, 0), 2, 8, 0 );
+            circle(frame, center[i], radius[i], Scalar(0,0,0), 1);
             }
 
         if(largestIndex >= 0){
@@ -141,21 +143,22 @@ int main(int argc, char **argv){
             ball.ballY = center[largestIndex].y;
             ball.width = width;
             ball.height = height;
-            
+            ROS_INFO("Found %d balls", foundCount);
             pub.publish(ball);
         }
         // ROS_INFO("Frame processed"); 
         // cvtColor(mask, mask, CV_GRAY2BGR);
-        //out.write(frame);
+        out.write(frame);
 
-        // resize(mask, mask, Size(240, 426));
-        //imshow("window", mask);
+        // resize(frame, frame, Size(240, 426));
+        //imshow("window", frame);
+        
         // ROS_INFO("Frame displayed");
         // waitKey(300);
 
-        if(frameCount == 400){
-            return 0;
-        }
+        // if(frameCount == 200){
+        //     return 0;
+        // }
         frameCount++;
 
     }

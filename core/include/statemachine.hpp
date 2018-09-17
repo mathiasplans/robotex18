@@ -17,12 +17,13 @@ private:
   // Thread Handle
   std::thread state_thread;
   // Thread Task
-  void state_machine(void);
+  
 
   // Machine control
   bool stop_signal;
 
   /*  */
+  
   bool search_for_ball();
   bool center_on_ball();
   bool throw_the_ball();
@@ -35,10 +36,17 @@ private:
 
   /* Serial Communication */
   int serial;
+  int counter = 0;
+
+  state_t state = IDLE;
 
 public:
-
+  void state_machine(void);
   StateMachine();
   state_t get_state();
+  int init();
+
+  void update_ball_position(int32_t, int32_t);
+  void set_object_in_sight(bool);
 
 };
