@@ -14,7 +14,7 @@
 
 void StateMachine::state_machine(void){
   /* Main Loop */
-  
+
 
   // for(;;){
     /* Referee Signal Handling */
@@ -31,7 +31,7 @@ void StateMachine::state_machine(void){
         // Start Searching Ball
         //usleep(1000);
         state = SEARCH_BALL;
-        
+
         break;
       case SEARCH_BALL:
         counter++;
@@ -108,7 +108,7 @@ StateMachine::StateMachine(void)/* : state_thread(&StateMachine::state_machine, 
 
   /* Serial communcication */
   /* https://stackoverflow.com/a/18134892 */
-  
+
 }
 
 #define SPIN_SEARCH_SPEED 9
@@ -150,7 +150,7 @@ bool StateMachine::center_on_ball(){
   if(object_position < POSITION_ERROR || object_position > POSITION_ERROR){
     std::string command = spin(SPIN_CENTER_SPEED * sgn(object_position));
     write(serial, command.c_str(), command.size());
-    
+
     return false;
   }
   // If the ball is at the center of the frame
@@ -197,4 +197,12 @@ int StateMachine::init(){
 
   //state_thread.join();
   return 0;
+}
+
+void StateMachine::update_ball_position(int32_t x, int32_t width){
+  object_position = width / 2 - x;
+}
+
+void StateMachine::set_object_in_sight(bool in_sight){
+  object_in_sight = in_sight;
 }
