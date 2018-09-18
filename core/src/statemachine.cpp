@@ -111,7 +111,7 @@ StateMachine::StateMachine(void)/* : state_thread(&StateMachine::state_machine, 
 
 }
 
-#define SPIN_SEARCH_SPEED 9
+#define SPIN_SEARCH_SPEED 10
 #define SPIN_CENTER_SPEED 5
 #define MOVING_SPEED      5
 #define POSITION_ERROR    5

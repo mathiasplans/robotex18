@@ -5,7 +5,7 @@
 #include <vector>
 #include "vision/Ball.h"
 
-// #define fake_camera false;
+#define fake_camera false;
 using namespace std;
 using namespace cv;
 const double pi = 3.14159265359;
@@ -20,7 +20,8 @@ int main(int argc, char **argv){
     ROS_INFO("Started");
 
     #ifdef fake_camera
-    VideoCapture cap("/home/robot/vid2.mp4");
+    VideoCapture cap("/home/robot/vids/sample_footage.mp4");
+    // VideoCapture cap("/home/robot/vid2.mp4");
     #else
     VideoCapture cap(2);
     #endif
@@ -35,11 +36,7 @@ int main(int argc, char **argv){
 
     #ifdef fake_camera
     Size downscale;
-    if(!(width > height)){
-        downscale = Size(1280, 720);
-    }else{
-        downscale = Size(720, 1280);
-    }
+    downscale = Size(480, 640);
     #else
     Size downscale(480, 640); // Frame is 9:16 because camera is mounted horizontally
     #endif
@@ -56,11 +53,12 @@ int main(int argc, char **argv){
         return -1;
     }
 
-    Scalar greenLower (29, 86, 6);
-Scalar greenUpper(64, 255, 255);
+//     Scalar greenLower (29, 86, 20);
+// Scalar greenUpper(60, 255, 255);
+Scalar greenLower(70, 224, 77);
+Scalar greenUpper(100, 254, 107);
 
-
-    //namedWindow( "window", WINDOW_AUTOSIZE );
+    namedWindow( "window", WINDOW_AUTOSIZE );
     
 
     cout << "Video opened, width: " << width << " and height: " << height << endl;
@@ -87,8 +85,8 @@ Scalar greenUpper(64, 255, 255);
         Mat resized;
         resize(frame, frame, downscale);
 
-        //GaussianBlur(frame, frame, Size(11, 11), 0);
-	    cvtColor(frame, frame, COLOR_BGR2HSV);
+        GaussianBlur(frame, frame, Size(11, 11), 0);
+	    cvtColor(frame, frame, COLOR_RGB2HSV);
 
         Mat element = getStructuringElement( MORPH_RECT,
                        Size(3, 3),
@@ -117,7 +115,7 @@ Scalar greenUpper(64, 255, 255);
             minEnclosingCircle( (Mat)contours_poly[i], center[i], radius[i] );
             }
 
-        cvtColor(frame, frame, CV_HSV2BGR);
+        cvtColor(frame, frame, CV_HSV2RGB);
 
         int largestIndex = -1;
         float largestRadius = 0;
@@ -125,8 +123,8 @@ Scalar greenUpper(64, 255, 255);
         
         for( int i = 0; i< contours.size(); i++ ){
             // Filter off too small and non-circular contours
-            // if(radius[i] < 10) continue;
-            if(contourArea(contours[i]) < pi * radius[i] * radius[i] * 0.4) continue;
+            // if(radius[i] < 4) continue;
+            // if(contourArea(contours[i]) < pi * radius[i] * radius[i] * 0.6) continue;
             foundCount++;
             if(radius[i] > largestRadius){
                 largestIndex = i;
@@ -147,12 +145,16 @@ Scalar greenUpper(64, 255, 255);
             pub.publish(ball);
         }
         // ROS_INFO("Frame processed"); 
-        // cvtColor(mask, mask, CV_GRAY2BGR);
+        cvtColor(mask, mask, CV_GRAY2BGR);
         out.write(frame);
 
-        // resize(frame, frame, Size(240, 426));
-        //imshow("window", frame);
-        
+        if(frameCount == 274){
+            resize(frame, frame, Size(240, 426));
+            imshow("window", frame);
+            Vec3b intensity = frame.at<Vec3b>(113, 171);
+            ROS_INFO("Blue: %u, green: %u, red: %u", intensity[0], intensity[1], intensity[2]);
+            waitKey(0);
+        }
         // ROS_INFO("Frame displayed");
         // waitKey(300);
 
