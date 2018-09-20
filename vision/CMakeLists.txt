@@ -19,15 +19,22 @@ catkin_package(
 )
 
 include_directories(
-# include
   ${OpenCV_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
-  )
+)
 
-  add_executable(camsim src/camsim.cpp)
+add_executable(camsim src/camsim.cpp)
 
-  target_link_libraries(camsim
+target_link_libraries(camsim
   ${OpenCV_LIBS}
   ${catkin_LIBRARIES}
 )
+
+add_executable(ball_detection src/ball_detection.cpp)
+
+target_link_libraries(ball_detection
+  ${OpenCV_LIBS}
+  ${catkin_LIBRARIES}
+)
+
 

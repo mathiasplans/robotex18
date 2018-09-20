@@ -3,9 +3,12 @@
 #include <opencv2/opencv.hpp>
 #include <iostream>
 #include <vector>
+#include <image_transport/image_transport.h>
 #include "vision/Ball.h"
 
-#define fake_camera false;
+#define fake_camera
+// #define vid_out
+
 using namespace std;
 using namespace cv;
 const double pi = 3.14159265359;
@@ -14,14 +17,15 @@ int main(int argc, char **argv){
     ros::init(argc, argv, "camera");
 
     ros::NodeHandle n;
-    ros::Publisher pub =  n.advertise<vision::Ball>("ball", 1000);
-    
+    //ros::Publisher pub =  n.advertise<vision::Ball>("ball", 1000);
+    image_transport::ImageTransport it(n);
+    image_transport::Publisher pub = it.advertise("camera/stream", 1);
 
     ROS_INFO("Started");
 
     #ifdef fake_camera
-    VideoCapture cap("/home/robot/vids/sample_footage.mp4");
-    // VideoCapture cap("/home/robot/vid2.mp4");
+    //VideoCapture cap("/home/robot/vids/sample_footage.mp4");
+    VideoCapture cap("/home/robot/vid.mp4");
     #else
     VideoCapture cap(2);
     #endif
@@ -37,10 +41,12 @@ int main(int argc, char **argv){
     #ifdef fake_camera
     Size downscale;
     downscale = Size(480, 640);
+    ros::Rate loop_rate(30);
     #else
     Size downscale(480, 640); // Frame is 9:16 because camera is mounted horizontally
     #endif
     
+    #ifdef vid_out
     int codec = 0x00000021;///VideoWriter::fourcc('X', '2', '6', '4');
     double fps = 30.0;
     string filename = "/home/robot/vids/test1.mp4";
@@ -52,24 +58,15 @@ int main(int argc, char **argv){
         cout << "Error could not open output file" << endl;
         return -1;
     }
-
-//     Scalar greenLower (29, 86, 20);
-// Scalar greenUpper(60, 255, 255);
-Scalar greenLower(70, 224, 77);
-Scalar greenUpper(100, 254, 107);
-
-    namedWindow( "window", WINDOW_AUTOSIZE );
-    
+    #endif
 
     cout << "Video opened, width: " << width << " and height: " << height << endl;
 
-    //namedWindow("TestVid", CV_WINDOW_AUTOSIZE);
     int frameCount = 0;
     
     while(ros::ok()){
 
         Mat frame;
-        
         bool fSuccess = cap.read(frame);
 
         if(!fSuccess){
@@ -81,86 +78,20 @@ Scalar greenUpper(100, 254, 107);
         rotate(frame, frame, ROTATE_90_CLOCKWISE);
         #endif
         
-        //Process frame
-        Mat resized;
         resize(frame, frame, downscale);
 
-        GaussianBlur(frame, frame, Size(11, 11), 0);
-	    cvtColor(frame, frame, COLOR_RGB2HSV);
-
-        Mat element = getStructuringElement( MORPH_RECT,
-                       Size(3, 3),
-                       Point(1, 1));
-        Mat mask;
-        inRange(frame, greenLower, greenUpper, mask);
-
-        
-        erode(mask, mask, element, Point(-1, -1),2);
-        dilate(mask, mask, element, Point(-1, -1),2);
-
-        
-        //std::vector<std::vector<cv::Point> > contours;
-        std::vector<std::vector<cv::Point> > contours;
-        //std::vector<cv::Vec4i> hierarchy
-        findContours(mask, contours, CV_RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
-
-        vector<vector<Point> > contours_poly( contours.size() );
-        //vector<Rect> boundRect( contours.size() );
-        vector<Point2f>center( contours.size() );
-        vector<float>radius( contours.size() );
-
-        for( int i = 0; i < contours.size(); i++ ){
-            approxPolyDP( Mat(contours[i]), contours_poly[i], 1, true );
-            //boundRect[i] = boundingRect( Mat(contours_poly[i]) );
-            minEnclosingCircle( (Mat)contours_poly[i], center[i], radius[i] );
-            }
-
-        cvtColor(frame, frame, CV_HSV2RGB);
-
-        int largestIndex = -1;
-        float largestRadius = 0;
-        int foundCount = 0;
-        
-        for( int i = 0; i< contours.size(); i++ ){
-            // Filter off too small and non-circular contours
-            // if(radius[i] < 4) continue;
-            // if(contourArea(contours[i]) < pi * radius[i] * radius[i] * 0.6) continue;
-            foundCount++;
-            if(radius[i] > largestRadius){
-                largestIndex = i;
-                largestRadius = radius[i];
-            }
-            drawContours(frame, contours_poly, i, Scalar(0, 0, 255), 2, 8, vector<Vec4i>(), 0, Point() );
-            circle(frame, center[i], 4, Scalar(0, 0, 0), 2, 8, 0 );
-            circle(frame, center[i], radius[i], Scalar(0,0,0), 1);
-            }
-
-        if(largestIndex >= 0){
-            vision::Ball ball;
-            ball.ballX = center[largestIndex].x;
-            ball.ballY = center[largestIndex].y;
-            ball.width = width;
-            ball.height = height;
-            ROS_INFO("Found %d balls", foundCount);
-            pub.publish(ball);
-        }
-        // ROS_INFO("Frame processed"); 
-        cvtColor(mask, mask, CV_GRAY2BGR);
+        #ifdef vid_out
         out.write(frame);
+        #endif
 
-        if(frameCount == 274){
-            resize(frame, frame, Size(240, 426));
-            imshow("window", frame);
-            Vec3b intensity = frame.at<Vec3b>(113, 171);
-            ROS_INFO("Blue: %u, green: %u, red: %u", intensity[0], intensity[1], intensity[2]);
-            waitKey(0);
-        }
-        // ROS_INFO("Frame displayed");
-        // waitKey(300);
+        sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", frame).toImageMsg();
+        pub.publish(msg);
+        ros::spinOnce();
 
-        // if(frameCount == 200){
-        //     return 0;
-        // }
+        #ifdef fake_camera
+        loop_rate.sleep();
+        #endif
+        
         frameCount++;
 
     }
