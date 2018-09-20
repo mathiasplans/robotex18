@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <ros/ros.h>
 
 /**
  *
@@ -18,8 +19,7 @@ private:
   // Machine control
   bool stop_signal;
 
-  /*  */
-
+  /* Navigation functions */
   bool search_for_ball();
   bool center_on_ball();
   bool throw_the_ball();
@@ -30,19 +30,21 @@ private:
   float object_position;
   bool object_in_sight;
 
-  /* Serial Communication */
-  int serial;
-  int counter = 0;
-
   state_t state = IDLE;
 
+  ros::Publish publisher;
+  void serial_write();
+
 public:
-  void state_machine(void);
-  StateMachine();
-  state_t get_state();
+  StateMachine(ros::Publish);
+
   int init();
+
+  void state_machine(void);
 
   void update_ball_position(int32_t, int32_t);
   void set_object_in_sight(bool);
+
+  void set_stop_signal(bool);
 
 };

@@ -1,19 +1,27 @@
 #include "ros/ros.h"
 #include "vision/Ball.h"
+#include "serial/Ref.h"
+#include "core/Command.h"
 
 #include "statemachine.hpp"
 
-StateMachine s;
+StateMachine sm;
 
 /**
- * Handles
+ * Handles the message from vision package
  */
 void vision_callback(const vision::Ball::ConstPtr& msg){
   ROS_INFO("I heard: [%d, %d]", msg->ballX, msg->width);
-  s.update_ball_position(msg->ballX, msg->width);
-  s.set_object_in_sight(true);
+  sm.update_ball_position(msg->ballX, msg->width);
+  sm.set_object_in_sight(true);
 }
 
+/**
+ * Handles the message from serial package
+ */
+void vision_callback(const vision::Ref::ConstPtr& msg){
+  sm.set_stop_signal(!msg->start);
+}
 
 int main(int argc, char **argv){
 
@@ -23,8 +31,14 @@ int main(int argc, char **argv){
   // Handle for the specific node
   ros::NodeHandle n;
 
+  // Add the referee topic to topics pool
+  ros::Publisher command_topic_out = n.advertise<std_msgs::Command>("commands", 1000);
+
   // Subscribe to a message from vision
-  ros::Subscriber sub = n.subscribe("ball", 1000, vision_callback);
+  ros::Subscriber image_processor = n.subscribe("ball", 1000, vision_callback);
+
+  // Subscribe to a message from serial
+  ros::Subscriber referee_signal = n.subscribe("referee_signals", 1000, referee_handler);
 
   // Initialize the CORE
   if(s.init() == -1){
@@ -33,15 +47,18 @@ int main(int argc, char **argv){
   }
 
   std::cout << "Init finished\n";
-  // Run ROS
-  ros::spinOnce();
+
+  // Create state machine instance
+  sm = StateMachine(command_topic_out);
+
 
   while(ros::ok()){
-    s.state_machine();
-    //std::cout << "hi\n";
-  }
+    // Run the statemachine
+    sm.state_machine();
 
-  std::cout << 1;
+    // Run ROS
+    ros::spinOnce();
+  }
 
   return 0;
 }

@@ -11,6 +11,8 @@
 #include <cstdlib>
 #include <unistd.h>
 
+#include <core/Command.h>
+
 
 void StateMachine::state_machine(void){
   /* Main Loop */
@@ -49,57 +51,15 @@ void StateMachine::state_machine(void){
   }
 }
 
-void serial_init(int* serial){
-
-  struct termios tty, tty_old;
-  memset(&tty, 0, sizeof tty);
-
-  /* Error Handling */
-  if(tcgetattr(*serial, &tty) != 0)
-    std::cout << "Error " << errno << " from tcgetattr: " << strerror(errno) << std::endl;
-
-  /* Save old tty parameters */
-  tty_old = tty;
-
-  /* Set Baud Rate */
-  cfsetospeed(&tty, (speed_t)B115200);
-  cfsetispeed(&tty, (speed_t)B115200);
-
-  /* Setting other Port Stuff */
-  // Disable parity bit
-  tty.c_cflag &= ~PARENB;
-
-  // Default stop bits
-  tty.c_cflag &= ~CSTOPB;
-
-  // Serial byte is 8 bits
-  tty.c_cflag &= ~CSIZE;
-  tty.c_cflag |= CS8;
-
-  // No flow control
-  tty.c_cflag &= ~CRTSCTS;
-
-  // Non-blocking read
-  tty.c_cc[VMIN] = 1;
-
-  // Read timeout (0.5s)
-  tty.c_cc[VTIME] = 5;
-
-  // Enable Read and ignore control lines
-  tty.c_cflag |= CREAD | CLOCAL;
-
-  /* Make raw */
-  cfmakeraw(&tty);
-
-  /* Flush Port, then apply attributes */
-  tcflush(*serial, TCIFLUSH );
-
-  if(tcsetattr(*serial, TCSANOW, &tty) != 0)
-    std::cout << "Error " << errno << " from tcsetattr" << std::endl;
+void StateMachine::serial_write(std_msgs::Command msg){
+  publisher.publish(msg);
 }
 
+void StateMachine::set_stop_signal(bool ref_signal){
+  stop_signal = ref_signal;
+}
 
-StateMachine::StateMachine(void){
+StateMachine::StateMachine(ros::Publish topic) : publisher(topic){
 
 }
 
@@ -121,7 +81,7 @@ bool StateMachine::search_for_ball(){
   if(!object_in_sight){
     std::string command = move(SPIN_SEARCH_SPEED, 0);
     //std::cout << "Hello\n";
-    write(serial, command.c_str(), command.size());
+    serial_write(serial, command.c_str(), command.size());
     std::cout << command << std::endl;
     usleep (1000000);
     return false;
@@ -129,7 +89,7 @@ bool StateMachine::search_for_ball(){
   // If then robot has found a ball, center in on it
   else{
     std::string command = stop();
-    write(serial, command.c_str(), command.size());
+    serial_write(serial, command.c_str(), command.size());
     return true;
   }
 
@@ -141,14 +101,14 @@ bool StateMachine::center_on_ball(){
   // If the ball is not at the center of the frame
   if(object_position < POSITION_ERROR || object_position > POSITION_ERROR){
     std::string command = spin(SPIN_CENTER_SPEED * sgn(object_position));
-    write(serial, command.c_str(), command.size());
+    serial_write(serial, command.c_str(), command.size());
 
     return false;
   }
   // If the ball is at the center of the frame
   else{
     std::string command = stop();
-    write(serial, command.c_str(), command.size());
+    serial_write(serial, command.c_str(), command.size());
     return true;
   }
 }
