@@ -1,1 +1,1 @@
-std::string command
+string command

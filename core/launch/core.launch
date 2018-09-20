@@ -3,7 +3,10 @@
         <node pkg="core" name="The Core" type="core" respawn="false" output="screen"/>
     </group>
 
-    <include file = "../vision/launch/start.launch">
+    <include file = "/home/robot/catkin_ws/src/vision/launch/start.launch">
+    </include>
+
+    <include file = "/home/robot/catkin_ws/src/serial/launch/serial.launch">
     </include>
 </launch>
 

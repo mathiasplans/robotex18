@@ -13,7 +13,6 @@
 
 #include <core/Command.h>
 
-
 void StateMachine::state_machine(void){
   /* Main Loop */
 
@@ -32,8 +31,6 @@ void StateMachine::state_machine(void){
 
       break;
     case SEARCH_BALL:
-      counter++;
-      //std::cout << "Looping\n";
       if(search_for_ball(/* Timeout perhaps */)) state = MOVE_TO_BALL;
       break;
     case SEARCH_BASKET:
@@ -51,7 +48,9 @@ void StateMachine::state_machine(void){
   }
 }
 
-void StateMachine::serial_write(std_msgs::Command msg){
+void StateMachine::serial_write(std::string string){
+  core::Command msg;
+  msg.command = string;
   publisher.publish(msg);
 }
 
@@ -59,7 +58,11 @@ void StateMachine::set_stop_signal(bool ref_signal){
   stop_signal = ref_signal;
 }
 
-StateMachine::StateMachine(ros::Publish topic) : publisher(topic){
+StateMachine::StateMachine(ros::Publisher topic) : publisher(topic){
+
+}
+
+StateMachine::StateMachine(){
 
 }
 
@@ -81,7 +84,7 @@ bool StateMachine::search_for_ball(){
   if(!object_in_sight){
     std::string command = move(SPIN_SEARCH_SPEED, 0);
     //std::cout << "Hello\n";
-    serial_write(serial, command.c_str(), command.size());
+    serial_write(command);
     std::cout << command << std::endl;
     usleep (1000000);
     return false;
@@ -89,7 +92,7 @@ bool StateMachine::search_for_ball(){
   // If then robot has found a ball, center in on it
   else{
     std::string command = stop();
-    serial_write(serial, command.c_str(), command.size());
+    serial_write(command);
     return true;
   }
 
@@ -101,14 +104,14 @@ bool StateMachine::center_on_ball(){
   // If the ball is not at the center of the frame
   if(object_position < POSITION_ERROR || object_position > POSITION_ERROR){
     std::string command = spin(SPIN_CENTER_SPEED * sgn(object_position));
-    serial_write(serial, command.c_str(), command.size());
+    serial_write(command);
 
     return false;
   }
   // If the ball is at the center of the frame
   else{
     std::string command = stop();
-    serial_write(serial, command.c_str(), command.size());
+    serial_write(command);
     return true;
   }
 }
@@ -137,23 +140,7 @@ bool StateMachine::throw_the_ball(){
 }
 
 int StateMachine::init(){
-  std::cout << "Opening serial" << std::endl;
-
-  serial = open("/dev/ttyACM0", O_RDWR | O_NOCTTY);
-
-  if(serial == -1){
-    std::cout << strerror(errno) << std::endl;
-    return serial;
-  }
-
-  std::cout << "Serial opened" << std::endl;
-
-  /* Serial communcication */
-  /* https://stackoverflow.com/a/18134892 */
-  serial_init(&serial);
-
-  //state_thread.join();
-  return 0;
+    return 0;
 }
 
 void StateMachine::update_ball_position(int32_t x, int32_t width){

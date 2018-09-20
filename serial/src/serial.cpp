@@ -1,9 +1,19 @@
 #include <ros/ros.h>
-#include <serial/Ref.msg>
-#include <core/Command.msg>
+#include <serial/Ref.h>
+#include <core/Command.h>
 
 #include <sstream>
 #include <string>
+
+#include <cstdio>      // standard input / output functions
+#include <cerrno>      // Error number definitions
+#include <termios.h>    // POSIX terminal control definitions
+#include <cstring>
+#include <iostream>
+#include <fcntl.h>
+
+#include <cstdlib>
+#include <unistd.h>
 
 /**
  *
@@ -70,7 +80,7 @@ bool command_in_buffer = false;
 /**
  *
  */
-void command_handler(const std_msgs::Command::ConstPtr& msg){
+void command_handler(const core::Command::ConstPtr& msg){
   command = msg->command;
   command_in_buffer = true;
 }
@@ -80,12 +90,12 @@ int main(int argc, char **argv){
   std::cout << "Opening serial" << std::endl;
 
   // Open the serial port
-  serial_port = open("/dev/ttyACM0", O_RDWR | O_NOCTTY);
+  int serial_port = open("/dev/ttyACM0", O_RDWR | O_NOCTTY);
 
   // Opening the serial port failed
   if(serial_port == -1){
     std::cout << strerror(errno) << std::endl;
-    return serial;
+    return -1;
   }
 
   std::cout << "Serial opened" << std::endl;
@@ -95,13 +105,13 @@ int main(int argc, char **argv){
   serial_init(&serial_port);
 
   /* ROS settings */
-  ros::init(argc, argv, "serial")
+  ros::init(argc, argv, "serial");
 
   // Create an instance of ros NodeHandle
   ros::NodeHandle n;
 
   // Add the referee topic to topics pool
-  ros::Publisher referee_topic_out = n.advertise<std_msgs::Ref>("referee_signals", 1000);
+  ros::Publisher referee_topic_out = n.advertise<serial::Ref>("referee_signals", 1000);
 
   // Subscribe to commands topic
   ros::Subscriber commands_topic_in = n.subscribe("commands", 1000, command_handler);
@@ -109,7 +119,7 @@ int main(int argc, char **argv){
   // Add Message publishing rate
   ros::Rate loop_rate(10);
 
-  int16_t n = 0, spot = 0;
+  int16_t index = 0, spot = 0;
   char buf = '\0';
 
   while(ros::ok()){
@@ -127,22 +137,22 @@ int main(int argc, char **argv){
 
       // Attempt to read the serial port
       do{
-          n = read(serial_port, &buf, 1);
+          index = read(serial_port, &buf, 1);
           referee.push_back(buf);
-      }while(buf != '\r' && n > 0);
+      }while(buf != '\r' && index > 0);
 
       // When error occurred
-      if(n < 0)
+      if(index < 0)
         std::cout << "Error while reading from serial: " << strerror(errno) << std::endl;
 
       // Nothing was read
-      else if(n == 0)
+      else if(index == 0)
         continue;
 
       // Successful read
       else{
         // Message object, to be sent to referee topic
-        std_msgs::Ref msg;
+        serial::Ref msg;
 
         /* Check if received message was referee signal */
         // Robot received start signal
@@ -168,7 +178,7 @@ int main(int argc, char **argv){
       }
 
       // Refresh loop variables
-      n = spot = 0;
+      index = spot = 0;
 
     }
 

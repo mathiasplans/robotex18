@@ -1,6 +1,8 @@
 #include <cstdint>
 #include <ros/ros.h>
 
+#include <string>
+
 /**
  *
  */
@@ -32,11 +34,12 @@ private:
 
   state_t state = IDLE;
 
-  ros::Publish publisher;
-  void serial_write();
+  ros::Publisher publisher;
+  void serial_write(std::string);
 
 public:
-  StateMachine(ros::Publish);
+  StateMachine(ros::Publisher);
+  StateMachine();
 
   int init();
 

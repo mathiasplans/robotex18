@@ -19,7 +19,7 @@ void vision_callback(const vision::Ball::ConstPtr& msg){
 /**
  * Handles the message from serial package
  */
-void vision_callback(const vision::Ref::ConstPtr& msg){
+void referee_handler(const serial::Ref::ConstPtr& msg){
   sm.set_stop_signal(!msg->start);
 }
 
@@ -32,7 +32,7 @@ int main(int argc, char **argv){
   ros::NodeHandle n;
 
   // Add the referee topic to topics pool
-  ros::Publisher command_topic_out = n.advertise<std_msgs::Command>("commands", 1000);
+  ros::Publisher command_topic_out = n.advertise<core::Command>("commands", 1000);
 
   // Subscribe to a message from vision
   ros::Subscriber image_processor = n.subscribe("ball", 1000, vision_callback);
@@ -41,7 +41,7 @@ int main(int argc, char **argv){
   ros::Subscriber referee_signal = n.subscribe("referee_signals", 1000, referee_handler);
 
   // Initialize the CORE
-  if(s.init() == -1){
+  if(sm.init() == -1){
     ros::shutdown();
     return 0;
   }

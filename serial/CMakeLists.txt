@@ -22,6 +22,8 @@ include_directories(
 
 add_executable(serial src/serial.cpp)
 
+add_dependencies(serial serial_generate_messages_cpp)
+
 target_link_libraries(
   serial
   ${catkin_LIBRARIES}
