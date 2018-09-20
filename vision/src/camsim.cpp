@@ -4,7 +4,7 @@
 #include <iostream>
 #include <vector>
 #include <image_transport/image_transport.h>
-#include "vision/Ball.h"
+#include "vision/Break.h"
 
 #define fake_camera
 // #define vid_out
@@ -12,6 +12,12 @@
 using namespace std;
 using namespace cv;
 const double pi = 3.14159265359;
+bool stop = false;
+
+void break_callback(const vision::Break::ConstPtr& s){
+    stop = !stop;
+    ROS_INFO("Break requested");
+}
 
 int main(int argc, char **argv){
     ros::init(argc, argv, "camera");
@@ -20,6 +26,7 @@ int main(int argc, char **argv){
     //ros::Publisher pub =  n.advertise<vision::Ball>("ball", 1000);
     image_transport::ImageTransport it(n);
     image_transport::Publisher pub = it.advertise("camera/stream", 1);
+    ros::Subscriber bsub = n.subscribe<vision::Break>("break", 1, break_callback);
 
     ROS_INFO("Started");
 
@@ -63,16 +70,24 @@ int main(int argc, char **argv){
     cout << "Video opened, width: " << width << " and height: " << height << endl;
 
     int frameCount = 0;
+    Mat breakFrame;
     
     while(ros::ok()){
 
         Mat frame;
-        bool fSuccess = cap.read(frame);
 
-        if(!fSuccess){
-            cout << "Cannot read frame nr " << frameCount << endl;
-            return -1;
+        if(!stop){
+            bool fSuccess = cap.read(frame);
+            if(!fSuccess){
+                cout << "Cannot read frame nr " << frameCount << endl;
+                return -1;
+            }
+            breakFrame = frame;
+        }else{
+            frame = breakFrame;
         }
+        
+        
 
         #ifndef fake_camera
         rotate(frame, frame, ROTATE_90_CLOCKWISE);

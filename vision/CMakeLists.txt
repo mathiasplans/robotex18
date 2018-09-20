@@ -15,6 +15,8 @@ find_package(Boost REQUIRED)
 
 find_package(OpenCV 3 REQUIRED)
 add_message_files(FILES Ball.msg)
+add_message_files(FILES Threshold.msg)
+add_message_files(FILES Break.msg)
 generate_messages(DEPENDENCIES std_msgs)
 
 catkin_package(
@@ -34,6 +36,7 @@ target_link_libraries(camsim
 )
 
 add_executable(ball_detection src/ball_detection.cpp)
+add_dependencies(ball_detection vision_generate_messages_cpp)
 
 target_link_libraries(ball_detection
   ${OpenCV_LIBS}
