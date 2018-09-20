@@ -5,11 +5,12 @@
 #include <vector>
 #include <image_transport/image_transport.h>
 #include "vision/Ball.h"
+#include <boost/bind.hpp>
 
 using namespace std;
 using namespace cv;
 
-void detection_callback(const sensor_msgs::ImageConstPtr& ros_frame){
+void detection_callback(const sensor_msgs::ImageConstPtr& ros_frame, image_transport::Publisher& pub){
     //Convert ros image back to cv::Mat
     cv_bridge::CvImagePtr ptr;
     ptr = cv_bridge::toCvCopy(ros_frame, "bgr8");
@@ -22,8 +23,8 @@ void detection_callback(const sensor_msgs::ImageConstPtr& ros_frame){
                     Size(3, 3),
                     Point(1, 1));
     Mat mask;
-    Scalar greenLower(36, 116, 96);
-    Scalar greenUpper(66, 146, 126);
+Scalar greenLower(55, 196, 88);
+Scalar greenUpper(115, 255, 148);
     inRange(frame, greenLower, greenUpper, mask);
 
     
@@ -71,12 +72,18 @@ void detection_callback(const sensor_msgs::ImageConstPtr& ros_frame){
         //pub.publish(ball);
     }
 
+    sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", frame).toImageMsg();
+    pub.publish(msg);
+
 }
 
 int main(int argc, char **argv){
     ros::init(argc, argv, "ball_detection");
     ros::NodeHandle n;
-    ros::Subscriber sub = n.subscribe("camera/stream", 1, detection_callback);
+    image_transport::ImageTransport it(n);
+    image_transport::Publisher pub = it.advertise("camera/processed", 1);
+    ros::Subscriber sub = n.subscribe<sensor_msgs::Image>("camera/stream", 1, boost::bind(detection_callback, _1, pub));
+    
 
     ros::spin();
     while(ros::ok()){

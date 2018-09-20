@@ -11,6 +11,8 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
 )
 
+find_package(Boost REQUIRED)
+
 find_package(OpenCV 3 REQUIRED)
 add_message_files(FILES Ball.msg)
 generate_messages(DEPENDENCIES std_msgs)
@@ -21,6 +23,7 @@ catkin_package(
 include_directories(
   ${OpenCV_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
+  ${Boost_INCLUDE_DIRS}
 )
 
 add_executable(camsim src/camsim.cpp)
@@ -35,6 +38,7 @@ add_executable(ball_detection src/ball_detection.cpp)
 target_link_libraries(ball_detection
   ${OpenCV_LIBS}
   ${catkin_LIBRARIES}
+  ${Boost_LIBRARIES}
 )
 
 
