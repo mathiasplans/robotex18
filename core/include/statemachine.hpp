@@ -1,5 +1,3 @@
-#include <thread>
-
 /**
  *
  */
@@ -8,22 +6,18 @@ typedef enum{
   SEARCH_BALL,      ///<
   SEARCH_BASKET,    ///<
   MOVE_TO_BALL,     ///<
-  THROW             ///< NOTE: MOVE_TO_THROW and THROW should perhaps merge?
+  THROW             ///<
 }state_t;
 
 class StateMachine{
 private:
   /* The main thread */
-  // Thread Handle
-  std::thread state_thread;
-  // Thread Task
-  
 
   // Machine control
   bool stop_signal;
 
   /*  */
-  
+
   bool search_for_ball();
   bool center_on_ball();
   bool throw_the_ball();

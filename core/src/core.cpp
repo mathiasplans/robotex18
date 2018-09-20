@@ -24,11 +24,9 @@ int main(int argc, char **argv){
   ros::NodeHandle n;
 
   // Subscribe to a message from vision
-  // ros::Subscriber sub = n.subscribe("ball", 1000, vision_callback);
+  ros::Subscriber sub = n.subscribe("ball", 1000, vision_callback);
 
   // Initialize the CORE
-  
-
   if(s.init() == -1){
     ros::shutdown();
     return 0;

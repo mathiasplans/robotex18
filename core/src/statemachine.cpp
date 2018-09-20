@@ -15,43 +15,38 @@
 void StateMachine::state_machine(void){
   /* Main Loop */
 
+  // If stop signale is set, then set to IDLE
+  if(stop_signal){
+    state = IDLE;
+    return;
+  }
 
-  // for(;;){
-    /* Referee Signal Handling */
+  /* State Handling */
+  switch (state) {
+    case IDLE:
+      // Start Searching Ball
+      //usleep(1000);
+      state = SEARCH_BALL;
 
-    // If stop signale is set, then set to IDLE
-    if(stop_signal){
-      state = IDLE;
-      return;
-    }
-
-    /* State Handling */
-    switch (state) {
-      case IDLE:
-        // Start Searching Ball
-        //usleep(1000);
-        state = SEARCH_BALL;
-
-        break;
-      case SEARCH_BALL:
-        counter++;
-        //std::cout << "Looping\n";
-        if(search_for_ball(/* Timeout perhaps */)) state = MOVE_TO_BALL;
-        break;
-      case SEARCH_BASKET:
-        if(search_for_basket(/* Timeout perhaps */)) state = THROW;
-        break;
-      case MOVE_TO_BALL:
-        if(goto_ball(/* Timeout perhaps */)) state = SEARCH_BASKET;
-        break;
-      case THROW:
-        if(throw_the_ball(/* Timeout perhaps */)) state = SEARCH_BALL;
-        break;
-      default:
-        /* Should never get here, ERROR! */
-        break;
-    }
-  // }
+      break;
+    case SEARCH_BALL:
+      counter++;
+      //std::cout << "Looping\n";
+      if(search_for_ball(/* Timeout perhaps */)) state = MOVE_TO_BALL;
+      break;
+    case SEARCH_BASKET:
+      if(search_for_basket(/* Timeout perhaps */)) state = THROW;
+      break;
+    case MOVE_TO_BALL:
+      if(goto_ball(/* Timeout perhaps */)) state = SEARCH_BASKET;
+      break;
+    case THROW:
+      if(throw_the_ball(/* Timeout perhaps */)) state = SEARCH_BALL;
+      break;
+    default:
+      /* Should never get here, ERROR! */
+      break;
+  }
 }
 
 void serial_init(int* serial){
@@ -104,10 +99,7 @@ void serial_init(int* serial){
 }
 
 
-StateMachine::StateMachine(void)/* : state_thread(&StateMachine::state_machine, this) */{
-
-  /* Serial communcication */
-  /* https://stackoverflow.com/a/18134892 */
+StateMachine::StateMachine(void){
 
 }
 
@@ -185,14 +177,19 @@ bool StateMachine::throw_the_ball(){
 }
 
 int StateMachine::init(){
-  std::cout << "Opening serial\n";
+  std::cout << "Opening serial" << std::endl;
+
   serial = open("/dev/ttyACM0", O_RDWR | O_NOCTTY);
-  std::cout << strerror(errno) << std::endl;
+
   if(serial == -1){
+    std::cout << strerror(errno) << std::endl;
     return serial;
   }
-  std::cout << "Serial opened\n";
 
+  std::cout << "Serial opened" << std::endl;
+
+  /* Serial communcication */
+  /* https://stackoverflow.com/a/18134892 */
   serial_init(&serial);
 
   //state_thread.join();
