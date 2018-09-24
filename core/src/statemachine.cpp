@@ -30,15 +30,16 @@ void StateMachine::state_machine(void){
 
       break;
     case SEARCH_BALL:
-      counter++;
-      //std::cout << "Looping\n";
-      if(search_for_ball(/* Timeout perhaps */)) state = MOVE_TO_BALL;
+      if(search_for_ball(/* Timeout perhaps */)) state = CENTRE_TO_BALL;
       break;
-    case SEARCH_BASKET:
-      if(search_for_basket(/* Timeout perhaps */)) state = THROW;
+    case CENTER_ON_BALL:
+      if(center_on_ball(/* Timeout perhaps */)) state = MOVE_TO_BALL;
       break;
     case MOVE_TO_BALL:
       if(goto_ball(/* Timeout perhaps */)) state = SEARCH_BASKET;
+      break;
+    case SEARCH_BASKET:
+      if(search_for_basket(/* Timeout perhaps */)) state = THROW;
       break;
     case THROW:
       if(throw_the_ball(/* Timeout perhaps */)) state = SEARCH_BALL;
@@ -119,17 +120,16 @@ template <typename T> int sgn(T val) {
 bool StateMachine::search_for_ball(){
   // If the robot hasn't found a ball yet
   if(!object_in_sight){
-    std::string command = move(SPIN_SEARCH_SPEED, 0);
-    //std::cout << "Hello\n";
+    std::string command = spin(SPIN_SEARCH_SPEED);
     write(serial, command.c_str(), command.size());
-    std::cout << command << std::endl;
-    usleep (1000000);
+    usleep(1000000);
     return false;
   }
   // If then robot has found a ball, center in on it
   else{
     std::string command = stop();
     write(serial, command.c_str(), command.size());
+    usleep(1000000);
     return true;
   }
 
@@ -142,29 +142,29 @@ bool StateMachine::center_on_ball(){
   if(object_position < POSITION_ERROR || object_position > POSITION_ERROR){
     std::string command = spin(SPIN_CENTER_SPEED * sgn(object_position));
     write(serial, command.c_str(), command.size());
-
+    usleep(1000000);
     return false;
   }
   // If the ball is at the center of the frame
   else{
     std::string command = stop();
     write(serial, command.c_str(), command.size());
+    usleep(1000000);
     return true;
   }
 }
 
-bool StateMachine::search_for_basket(){
+bool StateMachine::goto_ball(){
 
   // std::string command = move(MOVING_SPEED, 0 /* Go Staright */);
 
-  // Spin til basket in middle of frame
   return false;
 
 }
 
-bool StateMachine::goto_ball(){
+bool StateMachine::search_for_basket(){
 
-  // Simply move to the ball
+  // Spin til basket in middle of frame
   return false;
 
 }

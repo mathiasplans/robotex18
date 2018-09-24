@@ -6,6 +6,7 @@
 typedef enum{
   IDLE,             ///<
   SEARCH_BALL,      ///<
+  CENTER_ON_BALL,   ///<
   SEARCH_BASKET,    ///<
   MOVE_TO_BALL,     ///<
   THROW             ///<
