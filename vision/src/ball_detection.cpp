@@ -11,8 +11,8 @@
 using namespace std;
 using namespace cv;
 
-Scalar upper(180, 255, 255);
-Scalar lower(0,0,0);
+Scalar upper;
+Scalar lower;
 
 void detection_callback(const sensor_msgs::ImageConstPtr& ros_frame, image_transport::Publisher& pub, ros::Publisher& ballPub){
     //Convert ros image back to cv::Mat
@@ -54,8 +54,8 @@ void detection_callback(const sensor_msgs::ImageConstPtr& ros_frame, image_trans
     int foundCount = 0;
     
     for( int i = 0; i< contours.size(); i++ ){
-        // if(radius[i] < 4) continue;
-        // if(contourArea(contours[i]) < pi * radius[i] * radius[i] * 0.6) continue;
+        if(radius[i] < 2) continue;
+        // if(contourArea(contours[i]) < 3.14159265359f * radius[i] * radius[i] * 0.6) continue;
         foundCount++;
         if(radius[i] > largestRadius){
             largestIndex = i;
@@ -84,10 +84,20 @@ void detection_callback(const sensor_msgs::ImageConstPtr& ros_frame, image_trans
 void threshold_callback(const vision::Threshold::ConstPtr& t){
     upper = Scalar(t->hh, t->sh, t->vh);
     lower = Scalar(t->hl, t->sl, t->vl);
-    
+    ofstream ths("/home/robot/catkin_ws/src/vision/ths.txt");
+    ths << t->hh << endl << t->sh << endl << t->vh << endl;
+    ths << t->hl << endl << t->sl << endl << t->vl << endl;
+    ths.close();
 }
 
 int main(int argc, char **argv){
+    //Load previous thresholds from file
+    int hh, sh, vh, hl, sl, vl;
+    ifstream ths("/home/robot/catkin_ws/src/vision/ths.txt");
+    ths >> hh >> sh >> vh >> hl >> sl >> vl;
+    upper = Scalar(hh, sh, vh);
+    lower = Scalar(hl, sl, vl);
+
     ros::init(argc, argv, "ball_detection");
     ros::NodeHandle n;
     
