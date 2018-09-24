@@ -52,6 +52,7 @@ void StateMachine::serial_write(std::string string){
   core::Command msg;
   msg.command = string;
   publisher.publish(msg);
+  usleep(1000);
 }
 
 void StateMachine::set_stop_signal(bool ref_signal){
