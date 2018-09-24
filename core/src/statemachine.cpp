@@ -156,6 +156,9 @@ bool StateMachine::center_on_ball(){
 
 bool StateMachine::goto_ball(){
 
+  // NOTE: This is for testing thrower
+  std::string command = std::string("d:20\r\n");
+  write(serial, command.c_str(), command.size());
   // std::string command = move(MOVING_SPEED, 0 /* Go Staright */);
 
   return false;
