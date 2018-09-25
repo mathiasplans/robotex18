@@ -30,7 +30,7 @@ void StateMachine::state_machine(void){
 
       break;
     case SEARCH_BALL:
-      if(search_for_ball(/* Timeout perhaps */)) state = CENTRE_TO_BALL;
+      if(search_for_ball(/* Timeout perhaps */)) state = CENTER_ON_BALL;
       break;
     case CENTER_ON_BALL:
       if(center_on_ball(/* Timeout perhaps */)) state = MOVE_TO_BALL;
@@ -105,9 +105,9 @@ StateMachine::StateMachine(void){
 }
 
 #define SPIN_SEARCH_SPEED 10
-#define SPIN_CENTER_SPEED 5
+#define SPIN_CENTER_SPEED 1
 #define MOVING_SPEED      5
-#define POSITION_ERROR    5
+#define POSITION_ERROR    25
 
 /**
  * Sign function
@@ -139,8 +139,8 @@ bool StateMachine::search_for_ball(){
 
 bool StateMachine::center_on_ball(){
   // If the ball is not at the center of the frame
-  if(object_position < POSITION_ERROR || object_position > POSITION_ERROR){
-    std::string command = spin(SPIN_CENTER_SPEED * sgn(object_position));
+  if(object_position < -POSITION_ERROR || object_position > POSITION_ERROR){
+    std::string command = spin(SPIN_CENTER_SPEED * -sgn(object_position));
     write(serial, command.c_str(), command.size());
     usleep(1000000);
     return false;
@@ -157,7 +157,7 @@ bool StateMachine::center_on_ball(){
 bool StateMachine::goto_ball(){
 
   // NOTE: This is for testing thrower
-  std::string command = std::string("d:20\r\n");
+  std::string command = std::string("d:1500\r\n");
   write(serial, command.c_str(), command.size());
   usleep(1000000);
   // std::string command = move(MOVING_SPEED, 0 /* Go Staright */);

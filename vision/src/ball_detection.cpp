@@ -13,6 +13,8 @@ using namespace cv;
 
 Scalar upper;
 Scalar lower;
+int lastx = 0;
+int lasty = 0;
 
 void detection_callback(const sensor_msgs::ImageConstPtr& ros_frame, image_transport::Publisher& pub, ros::Publisher& ballPub){
     //Convert ros image back to cv::Mat
@@ -20,8 +22,8 @@ void detection_callback(const sensor_msgs::ImageConstPtr& ros_frame, image_trans
     ptr = cv_bridge::toCvCopy(ros_frame, "bgr8");
     Mat frame = ptr->image;
 
-    GaussianBlur(frame, frame, Size(11, 11), 0);
-    cvtColor(frame, frame, COLOR_RGB2HSV);
+    // GaussianBlur(frame, frame, Size(5, 5), 0);
+    cvtColor(frame, frame, COLOR_BGR2HSV);
 
     Mat element = getStructuringElement( MORPH_RECT,
                     Size(3, 3),
@@ -32,8 +34,8 @@ void detection_callback(const sensor_msgs::ImageConstPtr& ros_frame, image_trans
     inRange(frame, lower, upper, mask);
 
     
-    // erode(mask, mask, element, Point(-1, -1),2);
-    // dilate(mask, mask, element, Point(-1, -1),2);
+    erode(mask, mask, element, Point(-1, -1),2);
+    dilate(mask, mask, element, Point(-1, -1),2);
 
     std::vector<std::vector<cv::Point> > contours;
     findContours(mask, contours, CV_RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
@@ -47,15 +49,15 @@ void detection_callback(const sensor_msgs::ImageConstPtr& ros_frame, image_trans
         minEnclosingCircle( (Mat)contours_poly[i], center[i], radius[i] );
         }
 
-    cvtColor(frame, frame, CV_HSV2RGB);
+    cvtColor(frame, frame, CV_HSV2BGR);
 
     int largestIndex = -1;
     float largestRadius = 0;
     int foundCount = 0;
     
     for( int i = 0; i< contours.size(); i++ ){
-        if(radius[i] < 2) continue;
-        // if(contourArea(contours[i]) < 3.14159265359f * radius[i] * radius[i] * 0.6) continue;
+        if(radius[i] < 11 || radius[i] > 30 || center[i].y < 100) continue;
+        if(contourArea(contours[i]) < 3.14159265359f * radius[i] * radius[i] * 0.7) continue;
         foundCount++;
         if(radius[i] > largestRadius){
             largestIndex = i;
@@ -68,12 +70,18 @@ void detection_callback(const sensor_msgs::ImageConstPtr& ros_frame, image_trans
 
     if(largestIndex >= 0){
         vision::Ball ball;
+        
         ball.ballX = center[largestIndex].x;
         ball.ballY = center[largestIndex].y;
-        // ball.width = width;
+        ball.width = 480;
         // ball.height = height;
-        // ROS_INFO("Found %d balls", foundCount);
-        ballPub.publish(ball);
+        if(abs(ball.ballX - lastx) < 30 && abs(ball.ballY - lasty) < 30){
+            ROS_INFO("Found %d balls", foundCount);
+            ballPub.publish(ball);
+        }
+
+        lastx = center[largestIndex].x;
+        lasty = center[largestIndex].y;
     }
 
     sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", frame).toImageMsg();

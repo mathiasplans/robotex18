@@ -7,7 +7,7 @@
 #include "vision/Break.h"
 
 #define fake_camera
-// #define vid_out
+#define vid_out
 
 using namespace std;
 using namespace cv;
@@ -32,7 +32,7 @@ int main(int argc, char **argv){
 
     #ifdef fake_camera
     VideoCapture cap("/home/robot/vids/sample_footage.mp4");
-    // VideoCapture cap("/home/robot/vid.mp4");
+    // VideoCapture cap("/home/robot/vids/test1.mp4");
     #else
     VideoCapture cap(2);
     #endif
