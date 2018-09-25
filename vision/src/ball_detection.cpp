@@ -22,69 +22,40 @@ void detection_callback(const sensor_msgs::ImageConstPtr& ros_frame, image_trans
     ptr = cv_bridge::toCvCopy(ros_frame, "bgr8");
     Mat frame = ptr->image;
 
-    // GaussianBlur(frame, frame, Size(5, 5), 0);
-    cvtColor(frame, frame, COLOR_BGR2HSV);
-
-    Mat element = getStructuringElement( MORPH_RECT,
-                    Size(3, 3),
-                    Point(1, 1));
     Mat mask;
-// Scalar greenLower(28, 93, 90);
-// Scalar greenUpper(88, 153, 150);
-    inRange(frame, lower, upper, mask);
-
+   
+    cvtColor(frame, mask, CV_BGR2GRAY);
+    GaussianBlur( mask, mask, Size(9, 9), 2, 2 );
+    vector<Vec3f> circles;
+    HoughCircles(mask, circles, CV_HOUGH_GRADIENT, 1, 30, upper[0], upper[1], 0, 20);
     
-    erode(mask, mask, element, Point(-1, -1),2);
-    dilate(mask, mask, element, Point(-1, -1),2);
 
-    std::vector<std::vector<cv::Point> > contours;
-    findContours(mask, contours, CV_RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
-
-    vector<vector<Point> > contours_poly( contours.size() );
-    vector<Point2f>center( contours.size() );
-    vector<float>radius( contours.size() );
-
-    for( int i = 0; i < contours.size(); i++ ){
-        approxPolyDP( Mat(contours[i]), contours_poly[i], 1, true );
-        minEnclosingCircle( (Mat)contours_poly[i], center[i], radius[i] );
-        }
-
-    cvtColor(frame, frame, CV_HSV2BGR);
-
-    int largestIndex = -1;
-    float largestRadius = 0;
-    int foundCount = 0;
+    cvtColor(mask, mask, CV_GRAY2BGR);
     
-    for( int i = 0; i< contours.size(); i++ ){
-        if(radius[i] < 11 || radius[i] > 30 || center[i].y < 100) continue;
-        if(contourArea(contours[i]) < 3.14159265359f * radius[i] * radius[i] * 0.7) continue;
-        foundCount++;
-        if(radius[i] > largestRadius){
-            largestIndex = i;
-            largestRadius = radius[i];
-        }
-        drawContours(frame, contours_poly, i, Scalar(0, 0, 255), 2, 8, vector<Vec4i>(), 0, Point() );
-        circle(frame, center[i], 4, Scalar(0, 0, 0), 2, 8, 0 );
-        circle(frame, center[i], radius[i], Scalar(0,0,0), 1);
+    for( int i = 0; i< circles.size(); i++ ){
+        circle(mask, Point(cvRound(circles[i][0]), cvRound(circles[i][1])), cvRound(circles[i][2]), Scalar(0,0,255), 1);
     }
 
-    if(largestIndex >= 0){
-        vision::Ball ball;
+    ROS_INFO("Found %d balls", circles.size());
+    // if(0 || largestIndex >= 0){
+    //     vision::Ball ball;
         
-        ball.ballX = center[largestIndex].x;
-        ball.ballY = center[largestIndex].y;
-        ball.width = 480;
-        // ball.height = height;
-        if(abs(ball.ballX - lastx) < 30 && abs(ball.ballY - lasty) < 30){
-            ROS_INFO("Found %d balls", foundCount);
-            ballPub.publish(ball);
-        }
+    //     ball.ballX = center[largestIndex].x;
+    //     ball.ballY = center[largestIndex].y;
+    //     ball.width = 480;
+    //     // ball.height = height;
+    //     if(abs(ball.ballX - lastx) < 30 && abs(ball.ballY - lasty) < 30){
+    //         ROS_INFO("Found %d balls", foundCount);
+    //         ballPub.publish(ball);
+    //     }
 
-        lastx = center[largestIndex].x;
-        lasty = center[largestIndex].y;
-    }
+    //     lastx = center[largestIndex].x;
+    //     lasty = center[largestIndex].y;
+    // }
 
-    sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", frame).toImageMsg();
+    
+
+    sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", mask).toImageMsg();
     pub.publish(msg);
 
 }
