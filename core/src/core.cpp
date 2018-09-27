@@ -12,7 +12,7 @@ StateMachine sm;
  */
 void vision_callback(const vision::Ball::ConstPtr& msg){
   ROS_INFO("I heard: [%d, %d]", msg->ballX, msg->width);
-  sm.update_ball_position(msg->ballX, msg->width);
+  sm.update_ball_position(msg->ballX, msg->ballY, msg->width, msg->height);
   sm.set_object_in_sight(true);
 }
 
@@ -53,8 +53,10 @@ int main(int argc, char **argv){
 
 
   while(ros::ok()){
-    // Run the statemachine
     sm.state_machine();
+    ros::spinOnce();
+    //std::cout << "hi\n";
+  }
 
     // Run ROS
     ros::spinOnce();

@@ -25,22 +25,30 @@
   std::to_string(sped3) + \
   std::string("\r\n")
 
-double speed_of_wheel(wheel_t wheel, int16_t speed, uint16_t direction){
+double wheel::speed_of_wheel(wheel_t wheel, int16_t speed, uint16_t direction){
   return speed * cos((direction - wheel) * M_PI / 180);
 }
 
-std::string move(int16_t speed, uint16_t direction){
+std::string wheel::move(int16_t speed, uint16_t direction){
   return PACKET1(speed, direction);
 }
 
-std::string spin(int16_t ang_speed){
+std::string wheel::spin(int16_t ang_speed){
   return PACKET2(ang_speed, ang_speed, ang_speed);
 }
 
-std::string circle(int16_t speed){
+std::string wheel::circle(int16_t speed){
   return PACKET2(speed, 0, 0);
 }
 
-std::string stop(){
+std::string wheel::stop(){
   return PACKET2(0, 0, 0);
+}
+
+std::string wheel::thrower(uint16_t speed){
+  return std::string("d:") + std::to_string(speed) + std::string("\r\n");
+}
+
+std::string wheel::thrower_stop(){
+  return std::string("d:0\r\n");
 }

@@ -1,12 +1,10 @@
 <launch>
     <group ns="main">
-        <node pkg="core" name="The Core" type="core" respawn="false" output="screen"/>
+        <node pkg="core" name="TheCore" type="core" respawn="false" output="screen"/>
     </group>
 
-    <include file = "/home/robot/catkin_ws/src/vision/launch/start.launch">
+    <include file = "$(find serial)/launch/serial.launch">
     </include>
-
-    <include file = "/home/robot/catkin_ws/src/serial/launch/serial.launch">
+    <include file = "$(find vision)/launch/start.launch">
     </include>
 </launch>
-
