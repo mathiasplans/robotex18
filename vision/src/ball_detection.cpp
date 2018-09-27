@@ -7,6 +7,9 @@
 #include "vision/Ball.h"
 #include "vision/Threshold.h"
 #include <boost/bind.hpp>
+#include <cmath>
+
+#define PI 3.14159265359f
 
 using namespace std;
 using namespace cv;
@@ -15,6 +18,13 @@ Scalar upper;
 Scalar lower;
 int lastx = 0;
 int lasty = 0;
+
+double polsby_doppler(std::vector<cv::Point>& contour){
+    double length = arcLength(contour, true);
+    double area = contourArea(contour);
+
+    return 4*PI*area/pow(length, 2.0);
+}
 
 void detection_callback(const sensor_msgs::ImageConstPtr& ros_frame, image_transport::Publisher& pub, ros::Publisher& ballPub){
     //Convert ros image back to cv::Mat
@@ -56,16 +66,16 @@ void detection_callback(const sensor_msgs::ImageConstPtr& ros_frame, image_trans
     int foundCount = 0;
     
     for( int i = 0; i< contours.size(); i++ ){
-        if(radius[i] < 11 || radius[i] > 30 || center[i].y < 100) continue;
-        if(contourArea(contours[i]) < 3.14159265359f * radius[i] * radius[i] * 0.7) continue;
+        // if(radius[i] < 11 || radius[i] > 30 || center[i].y < 100) continue;
+        if(polsby_doppler(contours[i]) < 0.7) continue;
         foundCount++;
         if(radius[i] > largestRadius){
             largestIndex = i;
             largestRadius = radius[i];
         }
         drawContours(frame, contours_poly, i, Scalar(0, 0, 255), 2, 8, vector<Vec4i>(), 0, Point() );
-        circle(frame, center[i], 4, Scalar(0, 0, 0), 2, 8, 0 );
-        circle(frame, center[i], radius[i], Scalar(0,0,0), 1);
+        // circle(frame, center[i], 4, Scalar(0, 0, 0), 2, 8, 0 );
+        // circle(frame, center[i], radius[i], Scalar(0,0,0), 1);
     }
 
     if(largestIndex >= 0){
