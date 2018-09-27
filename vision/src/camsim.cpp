@@ -6,8 +6,8 @@
 #include <image_transport/image_transport.h>
 #include "vision/Break.h"
 
-#define fake_camera
-#define vid_out
+// #define fake_camera
+// #define vid_out
 
 using namespace std;
 using namespace cv;
@@ -23,7 +23,6 @@ int main(int argc, char **argv){
     ros::init(argc, argv, "camera");
 
     ros::NodeHandle n;
-    //ros::Publisher pub =  n.advertise<vision::Ball>("ball", 1000);
     image_transport::ImageTransport it(n);
     image_transport::Publisher pub = it.advertise("camera/stream", 1);
     ros::Subscriber bsub = n.subscribe<vision::Break>("break", 1, break_callback);
@@ -31,7 +30,7 @@ int main(int argc, char **argv){
     ROS_INFO("Started");
 
     #ifdef fake_camera
-    VideoCapture cap("/home/robot/vids/sample_footage.mp4");
+    VideoCapture cap("/home/robot/vids/balls.mp4");
     // VideoCapture cap("/home/robot/vids/test1.mp4");
     #else
     VideoCapture cap(2);
@@ -50,7 +49,8 @@ int main(int argc, char **argv){
     downscale = Size(480, 640);
     ros::Rate loop_rate(30);
     #else
-    Size downscale(480, 640); // Frame is 9:16 because camera is mounted horizontally
+    // Size downscale(480, 640); // Frame is 9:16 because camera is mounted horizontally
+    Size downscale(height, width);
     #endif
     
     #ifdef vid_out
