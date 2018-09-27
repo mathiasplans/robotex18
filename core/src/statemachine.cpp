@@ -102,7 +102,7 @@ bool StateMachine::search_for_ball(){
   // If the robot hasn't found a ball yet
   if(!object_in_sight){
     std::string command = wheel::spin(SPIN_SEARCH_SPEED);
-    write(serial, command.c_str(), command.size());
+    serial_write(command);
     usleep(COMMAND_DELAY);
     return false;
   }
@@ -111,7 +111,7 @@ bool StateMachine::search_for_ball(){
   else{
     object_in_sight = false;
     std::string command = wheel::stop();
-    write(serial, command.c_str(), command.size());
+    serial_write(command);
     usleep(COMMAND_DELAY);
     return true;
   }
@@ -121,7 +121,7 @@ bool StateMachine::center_on_ball(){
   // If the ball is not at the center of the frame
   if(object_position_x < -POSITION_ERROR || object_position_x > POSITION_ERROR){
     std::string command = wheel::spin(SPIN_CENTER_SPEED * sgn(object_position_x));
-    write(serial, command.c_str(), command.size());
+    serial_write(command);
     usleep(COMMAND_DELAY);
     return false;
   }
@@ -129,7 +129,7 @@ bool StateMachine::center_on_ball(){
   // If the ball is at the center of the frame
   else{
     std::string command = wheel::stop();
-    write(serial, command.c_str(), command.size());
+    serial_write(command);
     usleep(COMMAND_DELAY);
     return true;
   }
@@ -140,7 +140,7 @@ bool StateMachine::goto_ball(){
   // If the ball is not in front of the robot
   if(object_position_y > BALL_IN_FRONT + POSITION_ERROR || object_position_y < BALL_IN_FRONT - POSITION_ERROR){
     std::string command = wheel::move(MOVING_SPEED, object_position_x * CAMERA_FOV_X);
-    write(serial, command.c_str(), command.size());
+    serial_write(command);
     usleep(COMMAND_DELAY);
     return false;
   }
@@ -148,7 +148,7 @@ bool StateMachine::goto_ball(){
   // The ball is in front of the robot
   else{
     std::string command = wheel::stop();
-    write(serial, command.c_str(), command.size());
+    serial_write(command);
     usleep(COMMAND_DELAY);
     return true;
   }
@@ -174,12 +174,12 @@ bool StateMachine::throw_the_ball(){
   if(true /* Placeholder */){
     // Thrower motor control
     std::string command = wheel::thrower(THROWER_SPEED);
-    write(serial, command.c_str(), command.size());
+    serial_write(command);
     usleep(COMMAND_DELAY / 2);
 
     // Wheel control
     command = wheel::move(MOVING_SPEED, 0);
-    write(serial, command.c_str(), command.size());
+    serial_write(command);
     usleep(COMMAND_DELAY / 2);
     return false;
   }
@@ -188,12 +188,12 @@ bool StateMachine::throw_the_ball(){
   else{
     // Thrower motor control
     std::string command = wheel::thrower_stop();
-    write(serial, command.c_str(), command.size());
+    serial_write(command);
     usleep(COMMAND_DELAY / 2);
 
     // Wheel control
     command = wheel::stop();
-    write(serial, command.c_str(), command.size());
+    serial_write(command);
     usleep(COMMAND_DELAY / 2);
   }
 }

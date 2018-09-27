@@ -29,6 +29,7 @@ include_directories(
 )
 
 add_executable(camsim src/camsim.cpp)
+add_dependencies(camsim vision_generate_messages_cpp)
 
 target_link_libraries(camsim
   ${OpenCV_LIBS}
@@ -43,5 +44,3 @@ target_link_libraries(ball_detection
   ${catkin_LIBRARIES}
   ${Boost_LIBRARIES}
 )
-
-

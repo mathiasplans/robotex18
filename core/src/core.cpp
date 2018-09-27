@@ -55,11 +55,6 @@ int main(int argc, char **argv){
   while(ros::ok()){
     sm.state_machine();
     ros::spinOnce();
-    //std::cout << "hi\n";
-  }
-
-    // Run ROS
-    ros::spinOnce();
   }
 
   return 0;
