@@ -11,12 +11,15 @@
 #include <cstdlib>
 #include <unistd.h>
 
+#include <cmath>
+
 
 void StateMachine::state_machine(void){
   /* Main Loop */
 
   // If stop signale is set, then set to IDLE
-  if(stop_signal){
+  if(stop_signal || reset_signal){
+    reset_signal = false;
     state = IDLE;
     return;
   }
@@ -24,26 +27,33 @@ void StateMachine::state_machine(void){
   /* State Handling */
   switch (state) {
     case IDLE:
-      // Start Searching Ball
-      //usleep(1000);
+      // Start searching for the ball
       state = SEARCH_BALL;
 
       break;
     case SEARCH_BALL:
-      if(search_for_ball(/* Timeout perhaps */)) state = CENTER_ON_BALL;
+      if(search_for_ball()) state = CENTER_ON_BALL;
       break;
+
     case CENTER_ON_BALL:
-      if(center_on_ball(/* Timeout perhaps */)) state = MOVE_TO_BALL;
+      if(center_on_ball()) state = MOVE_TO_BALL;
       break;
+
     case MOVE_TO_BALL:
-      if(goto_ball(/* Timeout perhaps */)) state = SEARCH_BASKET;
+      if(goto_ball()) state = SEARCH_BASKET;
       break;
+
     case SEARCH_BASKET:
-      if(search_for_basket(/* Timeout perhaps */)) state = THROW;
+      if(search_for_basket()) state = THROW;
       break;
+
     case THROW:
-      if(throw_the_ball(/* Timeout perhaps */)) state = SEARCH_BALL;
+      if(throw_the_ball()) state = SEARCH_BALL;
       break;
+
+    case CORRECT_POSITION:
+      break;
+
     default:
       /* Should never get here, ERROR! */
       break;
@@ -104,10 +114,16 @@ StateMachine::StateMachine(void){
 
 }
 
-#define SPIN_SEARCH_SPEED 10
-#define SPIN_CENTER_SPEED 1
-#define MOVING_SPEED      5
-#define POSITION_ERROR    25
+#define SPIN_SEARCH_SPEED     10
+#define SPIN_CENTER_SPEED     1
+#define MOVING_SPEED          5
+#define MOVING_SPEED_THROW    1
+#define POSITION_ERROR        25
+#define CAMERA_FOV_X          M_PI * 2 / 9 /* 40 degrees */
+#define BALL_IN_FRONT         /* Height at which the ball is in front of the robot */
+#define COMMAND_RATE          30 /* Commands per second */
+#define COMMAND_DELAY         1000000 / COMMAND_RATE
+#define THROWER_SPEED         1500
 
 /**
  * Sign function
@@ -120,64 +136,101 @@ template <typename T> int sgn(T val) {
 bool StateMachine::search_for_ball(){
   // If the robot hasn't found a ball yet
   if(!object_in_sight){
-    std::string command = spin(SPIN_SEARCH_SPEED);
+    std::string command = wheel::spin(SPIN_SEARCH_SPEED);
     write(serial, command.c_str(), command.size());
-    usleep(1000000);
+    usleep(COMMAND_DELAY);
     return false;
   }
+
   // If then robot has found a ball, center in on it
   else{
-    std::string command = stop();
+    object_in_sight = false;
+    std::string command = wheel::stop();
     write(serial, command.c_str(), command.size());
-    usleep(1000000);
+    usleep(COMMAND_DELAY);
     return true;
   }
-
-  // Spin til green blob in middle of frame
-
 }
 
 bool StateMachine::center_on_ball(){
   // If the ball is not at the center of the frame
-  if(object_position < -POSITION_ERROR || object_position > POSITION_ERROR){
-    std::string command = spin(SPIN_CENTER_SPEED * -sgn(object_position));
+  if(object_position_x < -POSITION_ERROR || object_position_x > POSITION_ERROR){
+    std::string command = wheel::spin(SPIN_CENTER_SPEED * sgn(object_position_x));
     write(serial, command.c_str(), command.size());
-    usleep(1000000);
+    usleep(COMMAND_DELAY);
     return false;
   }
+
   // If the ball is at the center of the frame
   else{
-    std::string command = stop();
+    std::string command = wheel::stop();
     write(serial, command.c_str(), command.size());
-    usleep(1000000);
+    usleep(COMMAND_DELAY);
     return true;
   }
 }
 
+
 bool StateMachine::goto_ball(){
+  // If the ball is not in front of the robot
+  if(object_position_y > BALL_IN_FRONT + POSITION_ERROR || object_position_y < BALL_IN_FRONT - POSITION_ERROR){
+    std::string command = wheel::move(MOVING_SPEED, object_position_x * CAMERA_FOV_X);
+    write(serial, command.c_str(), command.size());
+    usleep(COMMAND_DELAY);
+    return false;
+  }
 
-  // NOTE: This is for testing thrower
-  std::string command = std::string("d:1500\r\n");
-  write(serial, command.c_str(), command.size());
-  usleep(1000000);
-  // std::string command = move(MOVING_SPEED, 0 /* Go Staright */);
-
-  return false;
-
+  // The ball is in front of the robot
+  else{
+    std::string command = wheel::stop();
+    write(serial, command.c_str(), command.size());
+    usleep(COMMAND_DELAY);
+    return true;
+  }
 }
 
 bool StateMachine::search_for_basket(){
+  // The basket and the ball are not in the center of the frame
+  if(object_position_x < -POSITION_ERROR || object_position_x > POSITION_ERROR){
 
-  // Spin til basket in middle of frame
-  return false;
+    return false;
+  }
+
+  // The basket and the ball are in the center of the frame
+  else{
+
+    return true;
+  }
 
 }
 
 bool StateMachine::throw_the_ball(){
+  // The ball is not thrown yet but we are getting close!
+  if(true /* Placeholder */){
+    // Thrower motor control
+    std::string command = wheel::thrower(THROWER_SPEED);
+    write(serial, command.c_str(), command.size());
+    usleep(COMMAND_DELAY / 2);
 
-  // Move forward and consome the ball
-  return false;
+    // Wheel control
+    command = wheel::move(MOVING_SPEED, 0);
+    write(serial, command.c_str(), command.size());
+    usleep(COMMAND_DELAY / 2);
+    return false;
+  }
 
+  // The ball has been thrown
+  else{
+    // Thrower motor control
+    std::string command = wheel::thrower_stop();
+    write(serial, command.c_str(), command.size());
+    usleep(COMMAND_DELAY / 2);
+
+    // Wheel control
+    command = wheel::stop();
+    write(serial, command.c_str(), command.size());
+    usleep(COMMAND_DELAY / 2);
+  }
 }
 
 int StateMachine::init(){
@@ -200,10 +253,23 @@ int StateMachine::init(){
   return 0;
 }
 
-void StateMachine::update_ball_position(int32_t x, int32_t width){
-  object_position = width / 2 - x;
+void StateMachine::update_ball_position(int16_t x, int16_t y, uint16_t width, uint16_t height){
+  object_position_x = -width / 2 + x;
+  object_position_y = height / y;
 }
 
 void StateMachine::set_object_in_sight(bool in_sight){
   object_in_sight = in_sight;
+}
+
+void StateMachine::reset_machine(){
+  reset_signal = true;
+}
+
+void StateMachine::stop_machine(){
+  stop_signal = true;
+}
+
+void StateMachine::start_machine(){
+  stop_signal = false;
 }

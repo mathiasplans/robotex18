@@ -9,7 +9,8 @@ typedef enum{
   CENTER_ON_BALL,   ///<
   SEARCH_BASKET,    ///<
   MOVE_TO_BALL,     ///<
-  THROW             ///<
+  THROW,            ///<
+  CORRECT_POSITION  ///<
 }state_t;
 
 class StateMachine{
@@ -18,6 +19,7 @@ private:
 
   // Machine control
   bool stop_signal;
+  bool reset_signal;
 
   /*  */
 
@@ -28,7 +30,8 @@ private:
   bool search_for_basket();
 
   /*  */
-  float object_position;
+  float object_position_x;
+  float object_position_y;
   bool object_in_sight;
 
   /* Serial Communication */
@@ -43,7 +46,11 @@ public:
   state_t get_state();
   int init();
 
-  void update_ball_position(int32_t, int32_t);
+  void reset_machine();
+  void stop_machine();
+  void start_machine();
+
+  void update_ball_position(int16_t, int16_t, uint16_t, uint16_t);
   void set_object_in_sight(bool);
 
 };

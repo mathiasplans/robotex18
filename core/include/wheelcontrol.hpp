@@ -4,6 +4,11 @@
 /**
  *
  */
+namespace wheel{
+
+/**
+ *
+ */
 typedef enum{
   WHEEL_1 = 0,    ///<
   WHEEL_2 = 120,  ///<
@@ -54,3 +59,17 @@ std::string circle(
  *
  */
 std::string stop();
+
+/**
+ *
+ */
+std::string thrower(
+  uint16_t speed  ///<
+);
+
+/**
+ *
+ */
+std::string thrower_stop();
+
+};
