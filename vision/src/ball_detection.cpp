@@ -13,6 +13,7 @@ using namespace cv;
 
 Scalar upper;
 Scalar lower;
+Scalar houghArgs;
 int lastx = 0;
 int lasty = 0;
 
@@ -22,21 +23,29 @@ void detection_callback(const sensor_msgs::ImageConstPtr& ros_frame, image_trans
     ptr = cv_bridge::toCvCopy(ros_frame, "bgr8");
     Mat frame = ptr->image;
 
+    
+    GaussianBlur( frame, frame, Size(3, 3), 2, 2 );
+    
     Mat mask;
-   
-    cvtColor(frame, mask, CV_BGR2GRAY);
-    GaussianBlur( mask, mask, Size(9, 9), 2, 2 );
+    cvtColor(frame, frame, CV_BGR2HSV);
+    inRange(frame, lower, upper, mask);
+    cvtColor(frame, frame, CV_HSV2BGR);
+    cvtColor(frame, frame, CV_BGR2GRAY);
+    bitwise_and(frame, mask, frame);
+
     vector<Vec3f> circles;
-    HoughCircles(mask, circles, CV_HOUGH_GRADIENT, 1, 30, upper[0], upper[1], 0, 20);
+    HoughCircles(mask, circles, CV_HOUGH_GRADIENT, 1, houghArgs[0], houghArgs[1], houghArgs[2], 3, 30); // Very experimental, more calibration needed
     
 
-    cvtColor(mask, mask, CV_GRAY2BGR);
+    cvtColor(frame, frame, CV_GRAY2BGR);
     
-    for( int i = 0; i< circles.size(); i++ ){
-        circle(mask, Point(cvRound(circles[i][0]), cvRound(circles[i][1])), cvRound(circles[i][2]), Scalar(0,0,255), 1);
+    for( int i = 0; i < circles.size(); i++ ){
+        circle(frame, Point(cvRound(circles[i][0]), cvRound(circles[i][1])), cvRound(circles[i][2]), Scalar(0,0,255), 2);
     }
 
-    ROS_INFO("Found %d balls", circles.size());
+    ROS_INFO("Found %d balls", (int)circles.size());
+    //---------------------------------
+    
     // if(0 || largestIndex >= 0){
     //     vision::Ball ball;
         
@@ -55,7 +64,7 @@ void detection_callback(const sensor_msgs::ImageConstPtr& ros_frame, image_trans
 
     
 
-    sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", mask).toImageMsg();
+    sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", frame).toImageMsg();
     pub.publish(msg);
 
 }
@@ -63,19 +72,22 @@ void detection_callback(const sensor_msgs::ImageConstPtr& ros_frame, image_trans
 void threshold_callback(const vision::Threshold::ConstPtr& t){
     upper = Scalar(t->hh, t->sh, t->vh);
     lower = Scalar(t->hl, t->sl, t->vl);
+    houghArgs = Scalar(t->dst, t->p1, t->p2);
     ofstream ths("/home/robot/catkin_ws/src/vision/ths.txt");
     ths << t->hh << endl << t->sh << endl << t->vh << endl;
     ths << t->hl << endl << t->sl << endl << t->vl << endl;
+    ths << t->dst << endl << t->p1 << endl << t->p2 << endl;
     ths.close();
 }
 
 int main(int argc, char **argv){
     //Load previous thresholds from file
-    int hh, sh, vh, hl, sl, vl;
+    int hh, sh, vh, hl, sl, vl, dst, p1, p2;
     ifstream ths("/home/robot/catkin_ws/src/vision/ths.txt");
-    ths >> hh >> sh >> vh >> hl >> sl >> vl;
+    ths >> hh >> sh >> vh >> hl >> sl >> vl >> dst >> p1 >> p2;
     upper = Scalar(hh, sh, vh);
     lower = Scalar(hl, sl, vl);
+    houghArgs = Scalar(dst, p1, p2);
 
     ros::init(argc, argv, "ball_detection");
     ros::NodeHandle n;

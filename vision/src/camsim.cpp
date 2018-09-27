@@ -31,7 +31,7 @@ int main(int argc, char **argv){
     ROS_INFO("Started");
 
     #ifdef fake_camera
-    VideoCapture cap("/home/robot/vids/sample_footage.mp4");
+    VideoCapture cap("/home/robot/vids/balls.mp4");
     // VideoCapture cap("/home/robot/vids/test1.mp4");
     #else
     VideoCapture cap(2);

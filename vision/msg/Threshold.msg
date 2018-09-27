@@ -4,3 +4,6 @@ int32 vh
 int32 hl
 int32 sl
 int32 vl
+int32 dst
+int32 p1
+int32 p2
