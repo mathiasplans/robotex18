@@ -1,5 +1,5 @@
 <launch>
     <group ns="main">
-        <node pkg="serial" name="Serial communication with main board" type="serial" respawn="true" output="screen"/>
+        <node pkg="serial" name="Serial_communication_with_main_board" type="serial" respawn="true" output="screen" />
     </group>
 </launch>

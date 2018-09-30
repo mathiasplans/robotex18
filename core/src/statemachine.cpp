@@ -16,7 +16,7 @@
 
 void StateMachine::state_machine(void){
   /* Main Loop */
-
+  
   // If stop signale is set, then set to IDLE
   if(stop_signal || reset_signal){
     reset_signal = false;
@@ -29,10 +29,10 @@ void StateMachine::state_machine(void){
     case IDLE:
       // Start searching for the ball
       state = SEARCH_BALL;
-
+      
       break;
     case SEARCH_BALL:
-      if(search_for_ball()) state = CENTER_ON_BALL;
+      if(search_for_ball()) state = SEARCH_BALL;
       break;
 
     case CENTER_ON_BALL:
@@ -71,8 +71,10 @@ void StateMachine::set_stop_signal(bool ref_signal){
   stop_signal = ref_signal;
 }
 
-StateMachine::StateMachine(ros::Publisher topic) : publisher(topic){
-
+StateMachine::StateMachine(ros::Publisher& topic){
+  std::cout << "ho";
+  publisher = topic;
+  
 }
 
 StateMachine::StateMachine(){
@@ -100,21 +102,23 @@ template <typename T> int sgn(T val) {
 
 bool StateMachine::search_for_ball(){
   // If the robot hasn't found a ball yet
-  if(!object_in_sight){
-    std::string command = wheel::spin(SPIN_SEARCH_SPEED);
+  //if(!object_in_sight){
+    // std::string command = wheel::spin(SPIN_SEARCH_SPEED);
+    // NOTE: Testing
+    std::string command = std::string("sd:5:1:1\r\n");
     serial_write(command);
     usleep(COMMAND_DELAY);
     return false;
-  }
+ // }
 
   // If then robot has found a ball, center in on it
-  else{
-    object_in_sight = false;
-    std::string command = wheel::stop();
-    serial_write(command);
-    usleep(COMMAND_DELAY);
-    return true;
-  }
+  //else{
+    //object_in_sight = false;
+    //std::string command = wheel::stop();
+    //serial_write(command);
+    //usleep(COMMAND_DELAY);
+  //  return true;
+ // }
 }
 
 bool StateMachine::center_on_ball(){

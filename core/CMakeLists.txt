@@ -10,9 +10,12 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
 )
 
+find_package(Boost REQUIRED)
+
 include_directories(
   include/
   ${catkin_INCLUDE_DIRS}
+  ${Boost_INCLUDE_DIRS}
 )
 
 add_executable(core src/core.cpp src/refereecontrol.cpp src/wheelcontrol.cpp src/statemachine.cpp include/statemachine.hpp include/wheelcontrol.hpp)

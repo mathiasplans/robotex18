@@ -83,6 +83,7 @@ bool command_in_buffer = false;
 void command_handler(const core::Command::ConstPtr& msg){
   command = msg->command;
   command_in_buffer = true;
+  ROS_INFO("%s", msg->command);
 }
 
 int main(int argc, char **argv){

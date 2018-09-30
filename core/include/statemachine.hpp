@@ -42,7 +42,7 @@ private:
   void serial_write(std::string);
 
 public:
-  StateMachine(ros::Publisher);
+  StateMachine(ros::Publisher&);
   StateMachine();
 
   int init();

@@ -5,6 +5,6 @@
 
     <include file = "$(find serial)/launch/serial.launch">
     </include>
-    <include file = "$(find vision)/launch/start.launch">
-    </include>
+    <!-- <include file = "$(find vision)/launch/start.launch">
+    </include> -->
 </launch>
