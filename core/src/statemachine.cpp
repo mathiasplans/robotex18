@@ -263,3 +263,7 @@ void StateMachine::stop_machine(){
 void StateMachine::start_machine(){
   stop_signal = false;
 }
+
+bool StateMachine::searching_for_ball(){
+  return searching_ball;
+}

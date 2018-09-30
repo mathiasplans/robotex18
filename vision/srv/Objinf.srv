@@ -1,0 +1,7 @@
+bool objectInSight
+int32 objectY
+int32 objectX
+int32 width
+int32 height
+---
+bool ball

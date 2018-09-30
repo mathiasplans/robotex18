@@ -18,6 +18,7 @@ add_message_files(FILES Ball.msg)
 add_message_files(FILES Threshold.msg)
 add_message_files(FILES Break.msg)
 add_message_files(FILES Output_type.msg)
+add_service_files(FILES Objinf.srv)
 generate_messages(DEPENDENCIES std_msgs)
 
 catkin_package(

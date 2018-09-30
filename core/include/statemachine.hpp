@@ -34,6 +34,8 @@ private:
   /* State variables */
   state_t state = IDLE;     ///< The internal state of the state machine. For details, refer to state_t
 
+  bool searching_ball = true;
+
   /* Control of the movement and actions */
   /**
    * Give a command to main board to move the robot to search for a ball.
@@ -117,5 +119,10 @@ public:
   void set_object_in_sight(
     bool in_sight  ///< [in] True if something is in sight
   );
+
+  /**
+   * Returns true if searching for a ball, false if searching for a basket.
+   */
+  bool searching_for_ball();
 
 };

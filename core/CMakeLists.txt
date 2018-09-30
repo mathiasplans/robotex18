@@ -11,12 +11,13 @@ add_compile_options(-std=c++11)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
+  message_generation
   vision
 )
 
 
-# add_message_files(FILES Ball.msg)
-# generate_messages(DEPENDENCIES std_msgs)
+add_message_files(FILES Bob.msg)
+generate_messages(DEPENDENCIES std_msgs)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -130,6 +131,7 @@ include_directories(
 #add_executable(core src/core.cpp)
 add_executable(core src/core.cpp src/refereecontrol.cpp src/wheelcontrol.cpp src/statemachine.cpp include/statemachine.hpp include/wheelcontrol.hpp)
 add_dependencies(core ${catkin_EXPORTED_TARGETS})
+add_dependencies(core core_generate_messages_cpp)
 
 target_link_libraries(core
   ${catkin_LIBRARIES}
