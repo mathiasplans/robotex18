@@ -20,6 +20,11 @@
 #define MOVING_SPEED_THROW    1
 
 /**
+ * Moving speed when orbiting an object
+ */
+#define ORBIT_SPEED           1
+
+/**
  * Position error of an object. That is how many pixels can an object be out of the intended position.
  */
 #define POSITION_ERROR        25
@@ -32,7 +37,7 @@
 /**
  * How close has the ball have to be for the robot to stop
  */
-#define BALL_IN_FRONT         /* Height at which the ball is in front of the robot */
+#define BALL_IN_FRONT         20 /* Height at which the ball is in front of the robot (Y pixels) */
 
 /**
  * How many commands are sent per second
