@@ -2,74 +2,74 @@
 #include <string>
 
 /**
- *
+ * Namespace for all functions related to motion of a robot
  */
 namespace wheel{
 
-/**
- *
- */
-typedef enum{
-  WHEEL_1 = 0,    ///<
-  WHEEL_2 = 120,  ///<
-  WHEEL_3 = 240   ///<
-}wheel_t;
+  /**
+   * Enum of wheel angles
+   */
+  typedef enum{
+    WHEEL_1 = 0,    ///< Angle of the first wheel
+    WHEEL_2 = 120,  ///< Angle of the second wheel
+    WHEEL_3 = 240   ///< Angle of the third wheel
+  }wheel_t;
 
-/**
- *
- */
-double speed_of_wheel(
-  wheel_t wheel,      ///<
-  int16_t speed,      ///<
-  uint16_t direction  ///<
-);
+  /**
+   * Get the speed of the specific wheel with motion meant for specific speed and direction
+   */
+  double speed_of_wheel(
+    wheel_t wheel,      ///< [in] Index of the wheel
+    int16_t speed,      ///< [in] Speed of the movement
+    uint16_t direction  ///< [in] Direction of movement
+  );
 
-/**
- *
- */
-std::string set_speed(
-  wheel_t wheel,      ///<
-  int16_t speed,      ///<
-  uint16_t direction  ///<
-);
+  /**
+   * Get the command for moving a single wheel
+   */
+  std::string set_speed(
+    wheel_t wheel,      ///< [in] Index of the wheel
+    int16_t speed       ///< [in] Speed of the movement
+  );
 
-/**
- *
- */
-std::string move(
-  int16_t speed,      ///<
-  uint16_t direction  ///<
-);
+  /**
+   * Get the command for moving in a specific direction and speed
+   */
+  std::string move(
+    int16_t speed,      ///< [in] Speed of the movement
+    uint16_t direction  ///< [in] Direction of the movement
+  );
 
-/**
- *
- */
-std::string spin(
-  int16_t ang_speed  ///<
-);
+  /**
+   * Get the command for spinning with specific speed
+   */
+  std::string spin(
+    int16_t ang_speed  ///< [in] Speed of the spinning motion
+  );
 
-/**
- *
- */
-std::string circle(
-  int16_t speed  ///<
-);
+  /**
+   * Get the command for stopping the motion
+   */
+  std::string stop();
 
-/**
- *
- */
-std::string stop();
+  /**
+   * Get the command for setting the speef of the thrower
+   */
+  std::string thrower(
+    uint16_t speed  ///< [in] Speed of the thrower. Ranges from 1001 to 2000.
+  );
 
-/**
- *
- */
-std::string thrower(
-  uint16_t speed  ///<
-);
+  /**
+   * Get the command for stopping the motion of the thrower
+   */
+  std::string thrower_stop();
 
-/**
- *
- */
-std::string thrower_stop();
+  /**
+   * Get the command for orbiting an object with specific speed and distance
+   */
+  std::string orbit(
+    int16_t speed,   ///< [in] Speed of the orbit
+    uint16_t radius  ///< [in] Distance from the object that is orbited. In cm.
+  );
 
-};
+}; /* namespace wheel */

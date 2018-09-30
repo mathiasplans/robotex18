@@ -1,3 +1,4 @@
+#include "defines.hpp"
 #include "statemachine.hpp"
 #include "wheelcontrol.hpp"
 
@@ -113,17 +114,6 @@ void serial_init(int* serial){
 StateMachine::StateMachine(void){
 
 }
-
-#define SPIN_SEARCH_SPEED     10
-#define SPIN_CENTER_SPEED     1
-#define MOVING_SPEED          5
-#define MOVING_SPEED_THROW    1
-#define POSITION_ERROR        25
-#define CAMERA_FOV_X          M_PI * 2 / 9 /* 40 degrees */
-#define BALL_IN_FRONT         /* Height at which the ball is in front of the robot */
-#define COMMAND_RATE          30 /* Commands per second */
-#define COMMAND_DELAY         1000000 / COMMAND_RATE
-#define THROWER_SPEED         1500
 
 /**
  * Sign function
