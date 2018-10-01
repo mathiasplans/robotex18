@@ -1,4 +1,5 @@
 #include <cmath>
+#include "defines.hpp"
 #include "wheelcontrol.hpp"
 
 #define SPEED_OF_WHEEL(wheel, sped, dir) std::to_string((int16_t)speed_of_wheel(wheel, sped, dir))
@@ -37,10 +38,6 @@ std::string wheel::spin(int16_t ang_speed){
   return PACKET2(ang_speed, ang_speed, ang_speed);
 }
 
-std::string wheel::circle(int16_t speed){
-  return PACKET2(speed, 0, 0);
-}
-
 std::string wheel::stop(){
   return PACKET2(0, 0, 0);
 }
@@ -51,4 +48,13 @@ std::string wheel::thrower(uint16_t speed){
 
 std::string wheel::thrower_stop(){
   return std::string("d:0\r\n");
+}
+
+std::string wheel::orbit(int16_t speed, uint16_t radius){
+  uint16_t spinning_speed = WHEEL_R * speed / radius;
+  return PACKET2(
+    (speed_of_wheel(WHEEL_1, speed, (M_PI / 2)) + spinning_speed),
+    (speed_of_wheel(WHEEL_2, speed, (M_PI / 2)) + spinning_speed),
+    (speed_of_wheel(WHEEL_3, speed, (M_PI / 2)) + spinning_speed)
+  );
 }

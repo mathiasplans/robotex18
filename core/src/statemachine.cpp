@@ -1,3 +1,4 @@
+#include "defines.hpp"
 #include "statemachine.hpp"
 #include "wheelcontrol.hpp"
 
@@ -33,22 +34,27 @@ void StateMachine::state_machine(void){
       break;
     case SEARCH_BALL:
       if(search_for_ball()) state = CENTER_ON_BALL;
+      searching_ball = true;
       break;
 
     case CENTER_ON_BALL:
       if(center_on_ball()) state = MOVE_TO_BALL;
+      searching_ball = true;
       break;
 
     case MOVE_TO_BALL:
       if(goto_ball()) state = SEARCH_BASKET;
+      searching_ball = true;
       break;
 
     case SEARCH_BASKET:
       if(search_for_basket()) state = THROW;
+      searching_ball = false;
       break;
 
     case THROW:
       if(throw_the_ball()) state = SEARCH_BALL;
+      searching_ball = false;
       break;
 
     case CORRECT_POSITION:
@@ -78,17 +84,6 @@ StateMachine::StateMachine(ros::Publisher topic) : publisher(topic){
 StateMachine::StateMachine(){
 
 }
-
-#define SPIN_SEARCH_SPEED     10
-#define SPIN_CENTER_SPEED     1
-#define MOVING_SPEED          5
-#define MOVING_SPEED_THROW    1
-#define POSITION_ERROR        25
-#define CAMERA_FOV_X          M_PI * 2 / 9 /* 40 degrees */
-#define BALL_IN_FRONT         /* Height at which the ball is in front of the robot */
-#define COMMAND_RATE          30 /* Commands per second */
-#define COMMAND_DELAY         1000000 / COMMAND_RATE
-#define THROWER_SPEED         1500
 
 /**
  * Sign function
@@ -157,16 +152,19 @@ bool StateMachine::goto_ball(){
 bool StateMachine::search_for_basket(){
   // The basket and the ball are not in the center of the frame
   if(object_position_x < -POSITION_ERROR || object_position_x > POSITION_ERROR){
-
+    std::string command = wheel::orbit(ORBIT_SPEED, BALL_IN_FRONT /* TODO: Replace with distance from ball instead */);
+    serial_write(command);
+    usleep(COMMAND_DELAY);
     return false;
   }
 
   // The basket and the ball are in the center of the frame
   else{
-
+    std::string command = wheel::stop();
+    serial_write(command);
+    usleep(COMMAND_DELAY);
     return true;
   }
-
 }
 
 bool StateMachine::throw_the_ball(){
@@ -221,4 +219,8 @@ void StateMachine::stop_machine(){
 
 void StateMachine::start_machine(){
   stop_signal = false;
+}
+
+bool StateMachine::searching_for_ball(){
+  return searching_ball;
 }
