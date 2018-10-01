@@ -34,22 +34,27 @@ void StateMachine::state_machine(void){
       break;
     case SEARCH_BALL:
       if(search_for_ball()) state = CENTER_ON_BALL;
+      searching_ball = true;
       break;
 
     case CENTER_ON_BALL:
       if(center_on_ball()) state = MOVE_TO_BALL;
+      searching_ball = true;
       break;
 
     case MOVE_TO_BALL:
       if(goto_ball()) state = SEARCH_BASKET;
+      searching_ball = true;
       break;
 
     case SEARCH_BASKET:
       if(search_for_basket()) state = THROW;
+      searching_ball = false;
       break;
 
     case THROW:
       if(throw_the_ball()) state = SEARCH_BALL;
+      searching_ball = false;
       break;
 
     case CORRECT_POSITION:
@@ -182,16 +187,19 @@ bool StateMachine::goto_ball(){
 bool StateMachine::search_for_basket(){
   // The basket and the ball are not in the center of the frame
   if(object_position_x < -POSITION_ERROR || object_position_x > POSITION_ERROR){
-
+    std::string command = wheel::orbit(ORBIT_SPEED, BALL_IN_FRONT /* TODO: Replace with distance from ball instead */);
+    write(serial, command.c_str(), command.size());
+    usleep(COMMAND_DELAY);
     return false;
   }
 
   // The basket and the ball are in the center of the frame
   else{
-
+    std::string command = wheel::stop();
+    write(serial, command.c_str(), command.size());
+    usleep(COMMAND_DELAY);
     return true;
   }
-
 }
 
 bool StateMachine::throw_the_ball(){
