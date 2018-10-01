@@ -77,7 +77,7 @@ void StateMachine::set_stop_signal(bool ref_signal){
   stop_signal = ref_signal;
 }
 
-StateMachine::StateMachine(ros::Publisher topic) : publisher(topic){
+StateMachine::StateMachine(ros::Publisher& topic) : publisher(topic){
 
 }
 

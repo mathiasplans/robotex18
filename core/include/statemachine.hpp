@@ -80,6 +80,11 @@ public:
   StateMachine();
 
   /**
+   *
+   */
+  StateMachine(ros::Publisher&);
+
+  /**
    * The State Machine logic. Calling this functon will tick the state machine. Put this into the infinite loop
    */
   void state_machine(void);
