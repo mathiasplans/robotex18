@@ -9,6 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   genmsg
   message_generation
+  core
 )
 
 find_package(Boost REQUIRED)
@@ -40,7 +41,7 @@ target_link_libraries(camsim
 )
 
 add_executable(ball_detection src/ball_detection.cpp include/ball_detection.hpp)
-add_dependencies(ball_detection vision_generate_messages_cpp)
+add_dependencies(ball_detection vision_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 target_link_libraries(ball_detection
   ${OpenCV_LIBS}
@@ -49,7 +50,7 @@ target_link_libraries(ball_detection
 )
 
 add_executable(basket_detection src/basket_detection.cpp include/ball_detection.hpp)
-add_dependencies(basket_detection vision_generate_messages_cpp)
+add_dependencies(basket_detection vision_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 target_link_libraries(basket_detection
   ${OpenCV_LIBS}

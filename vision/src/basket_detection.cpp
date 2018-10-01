@@ -10,19 +10,31 @@
 #include "vision/Output_type.h"
 #include <boost/bind.hpp>
 #include <cmath>
+#include "core/Bob.h"
 
 
 using namespace std;
 using namespace cv;
 
+
+// Global variables
+// --------------------------------------------
 Scalar upper;
 Scalar lower;
 int lastx = 0;
 int lasty = 0;
 output_t type = DEF;
 bool display_contours = false;
+bool requested = false;
+// --------------------------------------------
 
-void detection_callback(const sensor_msgs::ImageConstPtr& ros_frame, image_transport::Publisher& pub){
+
+// Callbacks
+// --------------------------------------------
+void detection_callback(const sensor_msgs::ImageConstPtr& ros_frame, image_transport::Publisher& pub, ros::Publisher& bpub){
+    // If no basket was requested then do not run the logic
+    if(!requested) return;
+
     //Convert ros image back to cv::Mat
     cv_bridge::CvImagePtr ptr;
     ptr = cv_bridge::toCvCopy(ros_frame, "bgr8");
@@ -88,15 +100,39 @@ void detection_callback(const sensor_msgs::ImageConstPtr& ros_frame, image_trans
             break;
     }
 
+    vision::Ball ball;
+
     if(display_contours && largestIndex >= 0){
         rectangle(out, boundRect[largestIndex].tl(), boundRect[largestIndex].br(), Scalar(0,0,255), 2, 8, 0);
     }
+    
+    if(largestIndex >= 0){
+        Rect r = boundRect[largestIndex];
+
+        
+        ball.ballX = r.x;
+        ball.ballY = r.y;
+        ball.width = r.width;
+        ball.height = r.height;
+
+    }else{
+        ball.ballX = -1;
+        ball.ballY = -1;
+        ball.width = -1;
+        ball.height = -1;
+    }
+
+    bpub.publish(ball);
 
     sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", frame).toImageMsg();
     pub.publish(msg);
 
+    requested = false;
 }
+// --------------------------------------------
 
+
+// --------------------------------------------
 void threshold_callback(const vision::Threshold::ConstPtr& t){
     upper = Scalar(t->hh, t->sh, t->vh);
     lower = Scalar(t->hl, t->sl, t->vl);
@@ -105,7 +141,10 @@ void threshold_callback(const vision::Threshold::ConstPtr& t){
     ths << t->hl << endl << t->sl << endl << t->vl << endl;
     ths.close();
 }
+// --------------------------------------------
 
+
+// --------------------------------------------
 void output_callback(const vision::Output_type::ConstPtr& o){
     if(o->t ==  "contours"){
         display_contours = !display_contours;
@@ -115,7 +154,19 @@ void output_callback(const vision::Output_type::ConstPtr& o){
         type = DEF;
     }
 }
+// --------------------------------------------
 
+
+// --------------------------------------------
+void bob_callback(const core::Bob::ConstPtr& t){
+    if(!t->ball){
+        requested = true;
+    }
+}
+// --------------------------------------------
+
+// Main
+// --------------------------------------------
 int main(int argc, char **argv){
     //Load previous thresholds from file
     int hh, sh, vh, hl, sl, vl;
@@ -129,10 +180,11 @@ int main(int argc, char **argv){
     
     image_transport::ImageTransport it(n);
     image_transport::Publisher pub = it.advertise("camera/processed_basket", 1);
-    ros::Subscriber sub = n.subscribe<sensor_msgs::Image>("camera/stream", 1, boost::bind(detection_callback, _1, pub));
+    ros::Publisher cpub = n.advertise<vision::Ball>("basket", 5);
+    ros::Subscriber sub = n.subscribe<sensor_msgs::Image>("camera/stream", 1, boost::bind(detection_callback, _1, pub, cpub));
     ros::Subscriber tsub = n.subscribe<vision::Threshold>("thresholds/basket", 1, threshold_callback);
     ros::Subscriber osub = n.subscribe<vision::Output_type>("output_type", 1, output_callback);
-    
+    ros::Subscriber csub = n.subscribe<core::Bob>("bob", 10, bob_callback);
     
 
     ros::spin();
@@ -142,3 +194,4 @@ int main(int argc, char **argv){
 
     return 0;
 }
+// --------------------------------------------
