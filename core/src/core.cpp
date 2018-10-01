@@ -5,7 +5,7 @@
 #include <boost/bind.hpp>
 
 #include "statemachine.hpp"
-
+#include "boost/bind.hpp"
 
 /**
  * Handles the message from vision package
@@ -34,8 +34,9 @@ int main(int argc, char **argv){
   // Add the referee topic to topics pool
   ros::Publisher command_topic_out = n.advertise<core::Command>("commands", 1000);
 
-  
+  // Create state machine instance
   StateMachine sm = StateMachine(command_topic_out);
+
   // Subscribe to a message from vision
   ros::Subscriber image_processor = n.subscribe<vision::Ball>("ball", 1000, boost::bind(vision_callback, _1, sm));
 
@@ -48,11 +49,14 @@ int main(int argc, char **argv){
     return 0;
   }
 
-  // std::cout << "Init finished\n";
-
-  // Create state machine instance
-  std::cout << "looping\n";
   
+  std::cout << "Init finished\n";
+  //
+  // // Get the 'ball' rolling. Get it?
+  // core::Bob command;
+  // command.ball = s.searching_for_ball();
+  // bob.publish(command);
+
   while(ros::ok()){
     
     sm.state_machine();
