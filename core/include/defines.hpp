@@ -2,7 +2,7 @@
 /**
  * Spinning speed when searching for a ball/basket
  */
-#define SPIN_SEARCH_SPEED     10
+#define SPIN_SEARCH_SPEED     5
 
 /**
  * Spinning speed when centering on a ball
@@ -12,7 +12,7 @@
 /**
  * Moving speed when moving around the arena
  */
-#define MOVING_SPEED          5
+#define MOVING_SPEED          15
 
 /**
  * Moving speed when aproaching a ball when throwing
@@ -27,22 +27,22 @@
 /**
  * Position error of an object. That is how many pixels can an object be out of the intended position.
  */
-#define POSITION_ERROR        25
+#define POSITION_ERROR        8
 
 /**
  * Filed of view of the camera, in radians
  */
-#define CAMERA_FOV_X          M_PI * 2 / 9 /* 40 degrees */
+#define CAMERA_FOV_X          40 /* 40 degrees */
 
 /**
  * How close has the ball have to be for the robot to stop
  */
-#define BALL_IN_FRONT         20 /* Height at which the ball is in front of the robot (Y pixels) */
+#define BALL_IN_FRONT         540 /* Height at which the ball is in front of the robot (Y pixels) */
 
 /**
  * How many commands are sent per second
  */
-#define COMMAND_RATE          30
+#define COMMAND_RATE          10
 
 /**
  * The delay between the commands

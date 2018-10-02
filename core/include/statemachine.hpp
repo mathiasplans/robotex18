@@ -26,6 +26,7 @@ private:
   float object_position_x;  ///< X coordinates of the object
   float object_position_y;  ///< Y coordinates of the object
   bool object_in_sight;     ///< True if any objects are in sight
+  float object_degrees_x = 0;
 
   /* Serial Communication */
   int serial;               ///< Handle of the serial port

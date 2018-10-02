@@ -33,7 +33,7 @@ void StateMachine::state_machine(void){
 
       break;
     case SEARCH_BALL:
-      if(search_for_ball()) state = CENTER_ON_BALL;
+      if(search_for_ball()) state = MOVE_TO_BALL;
       searching_ball = true;
       break;
 
@@ -168,10 +168,14 @@ bool StateMachine::center_on_ball(){
 
 bool StateMachine::goto_ball(){
   // If the ball is not in front of the robot
-  if(object_position_y > BALL_IN_FRONT + POSITION_ERROR || object_position_y < BALL_IN_FRONT - POSITION_ERROR){
-    std::string command = wheel::move(MOVING_SPEED, object_position_x * CAMERA_FOV_X);
+  if(!(object_position_y < BALL_IN_FRONT + POSITION_ERROR && object_position_y > BALL_IN_FRONT - POSITION_ERROR)){
+  //if(true){  
+    // std::string command = wheel::move(MOVING_SPEED, (int)object_degrees_x);
+    std::string command = wheel::move(MOVING_SPEED, 0);
     write(serial, command.c_str(), command.size());
+    std::cout << object_degrees_x << std::endl;
     usleep(COMMAND_DELAY);
+
     return false;
   }
 
@@ -253,7 +257,8 @@ int StateMachine::init(){
 
 void StateMachine::update_ball_position(int16_t x, int16_t y, uint16_t width, uint16_t height){
   object_position_x = -width / 2 + x;
-  object_position_y = height / y;
+  object_position_y = y;
+  if(x >= 0) object_degrees_x = -object_position_x * 1.3 * CAMERA_FOV_X/(480);
 }
 
 void StateMachine::set_object_in_sight(bool in_sight){
