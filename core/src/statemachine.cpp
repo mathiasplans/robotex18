@@ -131,7 +131,7 @@ template <typename T> int sgn(T val) {
 bool StateMachine::search_for_ball(){
   // If the robot hasn't found a ball yet
   if(!object_in_sight){
-    std::string command = wheel::spin(SPIN_SEARCH_SPEED);
+    std::string command = wheel::move(0, 0, SPIN_SEARCH_SPEED);
     write(serial, command.c_str(), command.size());
     usleep(COMMAND_DELAY);
     return false;
@@ -256,7 +256,7 @@ int StateMachine::init(){
 }
 
 void StateMachine::update_ball_position(int16_t x, int16_t y, uint16_t width, uint16_t height){
-  object_position_x = -width / 2 + x;
+  object_position_x = x;
   object_position_y = y;
   if(x >= 0) object_degrees_x = -object_position_x * 1.3 * CAMERA_FOV_X/(480);
 }

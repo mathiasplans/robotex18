@@ -36,16 +36,17 @@ namespace wheel{
    * Get the command for moving in a specific direction and speed
    */
   std::string move(
-    int16_t speed,      ///< [in] Speed of the movement
-    uint16_t direction  ///< [in] Direction of the movement
+    double speed,      ///< [in] Speed of the movement
+    double direction,  ///< [in] Direction of the movement
+    double angular_velocity
   );
 
   /**
    * Get the command for spinning with specific speed
    */
-  std::string spin(
-    int16_t ang_speed  ///< [in] Speed of the spinning motion
-  );
+  // std::string spin(
+  //   int16_t ang_speed  ///< [in] Speed of the spinning motion
+  // );
 
   /**
    * Get the command for stopping the motion
@@ -67,9 +68,9 @@ namespace wheel{
   /**
    * Get the command for orbiting an object with specific speed and distance
    */
-  std::string orbit(
-    int16_t speed,   ///< [in] Speed of the orbit
-    uint16_t radius  ///< [in] Distance from the object that is orbited. In cm.
-  );
+  // std::string orbit(
+  //   int16_t speed,   ///< [in] Speed of the orbit
+  //   uint16_t radius  ///< [in] Distance from the object that is orbited. In cm.
+  // );
 
 }; /* namespace wheel */

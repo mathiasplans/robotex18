@@ -1,3 +1,10 @@
+/**
+ * Frame dimensions
+ * TODO: Get camera node to use these for configuration
+ * Note: Maybe use a camera driver such as http://wiki.ros.org/libuvc_camera, then camera conf is done through a launch file. Can use these there.
+ */
+#define FRAME_HEIGHT          640
+#define FRAME_WIDTH           480
 
 /**
  * Spinning speed when searching for a ball/basket
@@ -55,11 +62,21 @@
 #define THROWER_SPEED         1500
 
 /**
- * The diameter of a wheel, in cm
+ * The distance from wheel to robot center, in cm
  */
-#define WHEEL_D               6.8
+
+#define WHEEL_D               13
 
 /**
  * The radios of a wheel, in cm
+ * 
+ * Note: Probably not needed as precise speed is not really needed right now and this acts just as a linear multiplier to all moving speeds
  */
-#define WHEEL_R               WHEEL_D / 2
+#define WHEEL_R               3.5
+
+/**
+ * Wheel speed to mainboard units. Can be calculated using the formula from DigiLabor's omnimotion page. 
+ * Value is currently determined experimentally. 
+ */
+
+#define MOVING_COEFFICIENT    1
