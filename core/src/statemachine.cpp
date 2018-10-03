@@ -22,6 +22,7 @@ void StateMachine::state_machine(void){
   if(stop_signal || reset_signal){
     reset_signal = false;
     state = IDLE;
+    std::cout << "/!\\" << std::endl;
     return;
   }
 
@@ -70,7 +71,7 @@ void StateMachine::serial_write(std::string string){
   core::Command msg;
   msg.command = string;
   publisher.publish(msg);
-  usleep(1000);
+  usleep(COMMAND_DELAY);
 }
 
 void StateMachine::set_stop_signal(bool ref_signal){
@@ -95,12 +96,11 @@ template <typename T> int sgn(T val) {
 
 bool StateMachine::search_for_ball(){
   // If the robot hasn't found a ball yet
-  if(!object_in_sight){
-    // std::string command = wheel::spin(SPIN_SEARCH_SPEED);
+  if(true){//!object_in_sight){
+    std::string command = wheel::spin(SPIN_SEARCH_SPEED);
     // NOTE: Testing
-    std::string command = std::string("sd:5:1:1\r\n");
+    //std::string command = std::string("sd:5:1:1\r\n");
     serial_write(command);
-    usleep(COMMAND_DELAY);
     return false;
   }
 
@@ -109,7 +109,6 @@ bool StateMachine::search_for_ball(){
     object_in_sight = false;
     std::string command = wheel::stop();
     serial_write(command);
-    usleep(COMMAND_DELAY);
     return true;
   }
 }
@@ -119,7 +118,6 @@ bool StateMachine::center_on_ball(){
   if(object_position_x < -POSITION_ERROR || object_position_x > POSITION_ERROR){
     std::string command = wheel::spin(SPIN_CENTER_SPEED * sgn(object_position_x));
     serial_write(command);
-    usleep(COMMAND_DELAY);
     return false;
   }
 
@@ -127,7 +125,6 @@ bool StateMachine::center_on_ball(){
   else{
     std::string command = wheel::stop();
     serial_write(command);
-    usleep(COMMAND_DELAY);
     return true;
   }
 }
@@ -138,7 +135,6 @@ bool StateMachine::goto_ball(){
   if(object_position_y > BALL_IN_FRONT + POSITION_ERROR || object_position_y < BALL_IN_FRONT - POSITION_ERROR){
     std::string command = wheel::move(MOVING_SPEED, object_position_x * CAMERA_FOV_X);
     serial_write(command);
-    usleep(COMMAND_DELAY);
     return false;
   }
 
@@ -146,7 +142,6 @@ bool StateMachine::goto_ball(){
   else{
     std::string command = wheel::stop();
     serial_write(command);
-    usleep(COMMAND_DELAY);
     return true;
   }
 }
@@ -156,7 +151,6 @@ bool StateMachine::search_for_basket(){
   if(object_position_x < -POSITION_ERROR || object_position_x > POSITION_ERROR){
     std::string command = wheel::orbit(ORBIT_SPEED, BALL_IN_FRONT /* TODO: Replace with distance from ball instead */);
     serial_write(command);
-    usleep(COMMAND_DELAY);
     return false;
   }
 
@@ -164,7 +158,6 @@ bool StateMachine::search_for_basket(){
   else{
     std::string command = wheel::stop();
     serial_write(command);
-    usleep(COMMAND_DELAY);
     return true;
   }
 }
@@ -175,12 +168,10 @@ bool StateMachine::throw_the_ball(){
     // Thrower motor control
     std::string command = wheel::thrower(THROWER_SPEED);
     serial_write(command);
-    usleep(COMMAND_DELAY / 2);
 
     // Wheel control
     command = wheel::move(MOVING_SPEED, 0);
     serial_write(command);
-    usleep(COMMAND_DELAY / 2);
     return false;
   }
 
@@ -189,12 +180,10 @@ bool StateMachine::throw_the_ball(){
     // Thrower motor control
     std::string command = wheel::thrower_stop();
     serial_write(command);
-    usleep(COMMAND_DELAY / 2);
 
     // Wheel control
     command = wheel::stop();
     serial_write(command);
-    usleep(COMMAND_DELAY / 2);
   }
 }
 

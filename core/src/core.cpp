@@ -51,14 +51,13 @@ int main(int argc, char **argv){
 
   
   std::cout << "Init finished\n";
-  //
+  
   // // Get the 'ball' rolling. Get it?
   // core::Bob command;
   // command.ball = s.searching_for_ball();
   // bob.publish(command);
 
   while(ros::ok()){
-    
     sm.state_machine();
     ros::spinOnce();
   }
