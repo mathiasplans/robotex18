@@ -1,60 +1,59 @@
 #include "ros/ros.h"
 #include "vision/Ball.h"
-#include "core/Bob.h"
+#include "serial/Ref.h"
+#include "core/Command.h"
+#include <boost/bind.hpp>
 
 #include "statemachine.hpp"
-
-StateMachine s;
-
-// Handle for the specific node
-ros::NodeHandle n;
-
-// Publish Bob
-ros::Publisher bob = n.advertise<core::Bob>("bob", 50);
+#include "boost/bind.hpp"
 
 /**
- * Handles
+ * Handles the message from vision package
  */
-void vision_callback(const vision::Ball::ConstPtr& msg){
+void vision_callback(const vision::Ball::ConstPtr& msg, StateMachine& sm){
   ROS_INFO("I heard: [%d, %d]", msg->ballX, msg->width);
-  s.update_ball_position(msg->ballX, msg->ballY, msg->width, msg->height);
-  s.set_object_in_sight(true);
-  core::Bob command;
-  command.ball = s.searching_for_ball();
-  bob.publish(command);
+  sm.update_ball_position(msg->ballX, msg->ballY, msg->width, msg->height);
+  sm.set_object_in_sight(true);
 }
 
+/**
+ * Handles the message from serial package
+ */
+void referee_handler(const serial::Ref::ConstPtr& msg, StateMachine& sm){
+  sm.set_stop_signal(!msg->start);
+}
 
 int main(int argc, char **argv){
 
   // Initialize ROS
   ros::init(argc, argv, "core");
 
-  // Subscribe to a message from vision
-  ros::Subscriber sub = n.subscribe("ball", 1000, vision_callback);
+  // Handle for the specific node
+  ros::NodeHandle n;
 
-  // Initialize the CORE
-  if(s.init() == -1){
-    ros::shutdown();
-    return 0;
-  }
+  // Add the referee topic to topics pool
+  ros::Publisher command_topic_out = n.advertise<core::Command>("commands", 1000);
+
+  // Create state machine instance
+  StateMachine sm = StateMachine(command_topic_out);
+
+  // Subscribe to a message from vision
+  ros::Subscriber image_processor = n.subscribe<vision::Ball>("ball", 1000, boost::bind(vision_callback, _1, sm));
+
+  // Subscribe to a message from serial
+  ros::Subscriber referee_signal = n.subscribe<serial::Ref>("referee_signals", 1000, boost::bind(referee_handler, _1, sm));
 
   std::cout << "Init finished\n";
-  // Run ROS
-  ros::spinOnce();
 
-  // Get the 'ball' rolling. Get it?
-  core::Bob command;
-  command.ball = s.searching_for_ball();
-  bob.publish(command);
+  // // Get the 'ball' rolling. Get it?
+  // core::Bob command;
+  // command.ball = s.searching_for_ball();
+  // bob.publish(command);
 
   while(ros::ok()){
-    s.state_machine();
+    sm.state_machine();
     ros::spinOnce();
-    //std::cout << "hi\n";
   }
-
-  std::cout << 1;
 
   return 0;
 }

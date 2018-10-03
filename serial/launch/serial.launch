@@ -1,0 +1,5 @@
+<launch>
+    <group ns="main">
+        <node pkg="serial" name="SerialCom" type="serial" respawn="true" output="screen" />
+    </group>
+</launch>
