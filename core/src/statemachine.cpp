@@ -132,7 +132,9 @@ bool StateMachine::search_for_ball(){
   // If the robot hasn't found a ball yet
   if(!object_in_sight){
     std::string command = wheel::move(0, 0, SPIN_SEARCH_SPEED);
+    // std::string command = wheel::move(-10, 70, 0);
     write(serial, command.c_str(), command.size());
+    std::cout << command << std::endl;
     usleep(COMMAND_DELAY);
     return false;
   }
@@ -149,8 +151,13 @@ bool StateMachine::search_for_ball(){
 
 bool StateMachine::center_on_ball(){
   // If the ball is not at the center of the frame
-  if(object_position_x < -POSITION_ERROR || object_position_x > POSITION_ERROR){
-    std::string command = wheel::spin(SPIN_CENTER_SPEED * sgn(object_position_x));
+  if(abs(object_position_x - FRAME_WIDTH / 2) > POSITION_ERROR){
+    double angv = SPIN_CENTER_SPEED;
+    if(object_position_x > FRAME_WIDTH / 2){
+      angv *= -1;
+    }
+
+    std::string command = wheel::move(0, 0, angv);
     write(serial, command.c_str(), command.size());
     usleep(COMMAND_DELAY);
     return false;
@@ -168,10 +175,18 @@ bool StateMachine::center_on_ball(){
 
 bool StateMachine::goto_ball(){
   // If the ball is not in front of the robot
-  if(!(object_position_y < BALL_IN_FRONT + POSITION_ERROR && object_position_y > BALL_IN_FRONT - POSITION_ERROR)){
-  //if(true){  
-    // std::string command = wheel::move(MOVING_SPEED, (int)object_degrees_x);
-    std::string command = wheel::move(MOVING_SPEED, 0);
+  if(( object_position_y < BALL_IN_FRONT)){
+
+    // In case the ball moves out of the pos error range then rotate a little bit
+    double angv = 0;
+    if(abs(object_position_x - FRAME_WIDTH / 2) > POSITION_ERROR){
+      angv += SPIN_CENTER_SPEED * 1.5;
+      if(object_position_x > FRAME_WIDTH / 2){
+        angv *= -1;
+      }
+    }
+    
+    std::string command = wheel::move(MOVING_SPEED, 90, angv);
     write(serial, command.c_str(), command.size());
     std::cout << object_degrees_x << std::endl;
     usleep(COMMAND_DELAY);
@@ -190,8 +205,8 @@ bool StateMachine::goto_ball(){
 
 bool StateMachine::search_for_basket(){
   // The basket and the ball are not in the center of the frame
-  if(object_position_x < -POSITION_ERROR || object_position_x > POSITION_ERROR){
-    std::string command = wheel::orbit(ORBIT_SPEED, BALL_IN_FRONT /* TODO: Replace with distance from ball instead */);
+  if(true){//object_position_x < -POSITION_ERROR || object_position_x > POSITION_ERROR){
+    std::string command = wheel::move(ORBIT_SPEED, 0, abs(object_position_x - FRAME_WIDTH / 2) * 0.01);
     write(serial, command.c_str(), command.size());
     usleep(COMMAND_DELAY);
     return false;
@@ -215,7 +230,7 @@ bool StateMachine::throw_the_ball(){
     usleep(COMMAND_DELAY / 2);
 
     // Wheel control
-    command = wheel::move(MOVING_SPEED, 0);
+    command = wheel::move(MOVING_SPEED, 0, 0);
     write(serial, command.c_str(), command.size());
     usleep(COMMAND_DELAY / 2);
     return false;
@@ -258,7 +273,7 @@ int StateMachine::init(){
 void StateMachine::update_ball_position(int16_t x, int16_t y, uint16_t width, uint16_t height){
   object_position_x = x;
   object_position_y = y;
-  if(x >= 0) object_degrees_x = -object_position_x * 1.3 * CAMERA_FOV_X/(480);
+  // if(x >= 0) object_degrees_x = object_position_x * CAMERA_FOV_X/FRAME_WIDTH;
 }
 
 void StateMachine::set_object_in_sight(bool in_sight){

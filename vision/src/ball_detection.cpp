@@ -73,20 +73,20 @@ void detection_callback(const sensor_msgs::ImageConstPtr& ros_frame, image_trans
     int foundCount = 0;
     
     for( int i = 0; i< contours.size(); i++ ){
-        if(radius[i] < 3 || radius[i] > 55 || center[i].y < 100) continue;
-        if(polsby_doppler(contours[i]) < 0.75) continue;
+        if(radius[i] < 12  ) continue;//|| radius[i] > 55 || center[i].y < 100) continue;
+        if(polsby_doppler(contours[i]) < 0.7) continue;
         foundCount++;
         if(radius[i] > largestRadius){
             largestIndex = i;
             largestRadius = radius[i];
         }
-        // if(display_contours) drawContours(frame, contours_poly, i, Scalar(0, 0, 255), 2, 8, vector<Vec4i>(), 0, Point() );
+        if(display_contours) drawContours(frame, contours_poly, i, Scalar(0, 0, 255), 2, 8, vector<Vec4i>(), 0, Point() );
         
     }
 
     vision::Ball ball;
     
-    if(largestIndex >= 0 || frameCount < 45){
+    if(largestIndex >= 0 && frameCount > 15){
         
         
         if(abs(center[largestIndex].x - lastx) < 30 && abs(center[largestIndex].y - lasty) < 30){
@@ -147,7 +147,7 @@ void threshold_callback(const vision::Threshold::ConstPtr& t){
     ofstream ths("/home/robot/catkin_ws/src/vision/ths.txt");
     ths << t->hh << endl << t->sh << endl << t->vh << endl;
     ths << t->hl << endl << t->sl << endl << t->vl << endl;
-    cout << "hi\n";
+    // cout << "hi\n";
     ths.close();
 }
 

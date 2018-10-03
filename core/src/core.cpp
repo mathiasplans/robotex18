@@ -14,9 +14,14 @@ StateMachine s;
  */
 void vision_callback(const vision::Ball::ConstPtr& msg, ros::Publisher& bob){
   ROS_INFO("I heard: [%d, %d]", msg->ballX, msg->ballY);
-  if(msg->ballX < 0) s.reset_machine();
-  s.update_ball_position(msg->ballX, msg->ballY, msg->width, msg->height);
-  s.set_object_in_sight(true);
+  
+  if(msg->ballX < 0) {
+    s.reset_machine();
+  }else{
+    s.update_ball_position(msg->ballX, msg->ballY, msg->width, msg->height);
+    s.set_object_in_sight(true);
+  }
+  
   core::Bob command;
   command.ball = s.searching_for_ball();
   bob.publish(command);

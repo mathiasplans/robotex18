@@ -9,17 +9,17 @@
 /**
  * Spinning speed when searching for a ball/basket
  */
-#define SPIN_SEARCH_SPEED     5
+#define SPIN_SEARCH_SPEED     0.5
 
 /**
  * Spinning speed when centering on a ball
  */
-#define SPIN_CENTER_SPEED     1
+#define SPIN_CENTER_SPEED     0.2
 
 /**
  * Moving speed when moving around the arena
  */
-#define MOVING_SPEED          15
+#define MOVING_SPEED          25
 
 /**
  * Moving speed when aproaching a ball when throwing
@@ -29,7 +29,7 @@
 /**
  * Moving speed when orbiting an object
  */
-#define ORBIT_SPEED           1
+#define ORBIT_SPEED           30.0f
 
 /**
  * Position error of an object. That is how many pixels can an object be out of the intended position.
@@ -79,4 +79,4 @@
  * Value is currently determined experimentally. 
  */
 
-#define MOVING_COEFFICIENT    1
+#define MOVING_COEFFICIENT    0.5

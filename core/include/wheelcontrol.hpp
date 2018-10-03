@@ -10,9 +10,9 @@ namespace wheel{
    * Enum of wheel angles
    */
   typedef enum{
-    WHEEL_1 = 90,    ///< Angle of the first wheel
-    WHEEL_2 = 210,  ///< Angle of the second wheel
-    WHEEL_3 = 330   ///< Angle of the third wheel
+    WHEEL_1 = 0,    ///< Angle of the first wheel
+    WHEEL_2 = 120,  ///< Angle of the second wheel
+    WHEEL_3 = 240   ///< Angle of the third wheel
   }wheel_t;
 
   /**
@@ -20,8 +20,9 @@ namespace wheel{
    */
   double speed_of_wheel(
     wheel_t wheel,      ///< [in] Index of the wheel
-    int16_t speed,      ///< [in] Speed of the movement
-    uint16_t direction  ///< [in] Direction of movement
+    double speed,      ///< [in] Speed of the movement
+    double direction,  ///< [in] Direction of movement
+    double angular_velocity
   );
 
   /**

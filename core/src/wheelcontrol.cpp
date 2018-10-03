@@ -27,7 +27,7 @@
   std::string("\r\n")
 
 double wheel::speed_of_wheel(wheel_t wheel, double speed, double direction, double angular_velocity){
-  return (speed * cos((direction - wheel) * M_PI / 180) + angular_velocity * WHEEL_D);
+  return -MOVING_COEFFICIENT * (speed * cos((direction - wheel) * M_PI / 180) + angular_velocity * WHEEL_D);
 }
 
 // For moving and turning at the same time
@@ -36,11 +36,6 @@ std::string wheel::move(double speed, double direction, double angular_velocity)
   return PACKET1(speed, direction, angular_velocity);
 }
 
-// For moving straight
-
-std::string wheel::move(double speed, double direction){
-  return PACKET1(speed, direction, 0);
-}
 
 // std::string wheel::spin(int16_t ang_speed){
 //   return PACKET2(ang_speed, ang_speed, ang_speed);
