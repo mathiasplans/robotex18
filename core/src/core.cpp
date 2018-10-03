@@ -43,15 +43,8 @@ int main(int argc, char **argv){
   // Subscribe to a message from serial
   ros::Subscriber referee_signal = n.subscribe<serial::Ref>("referee_signals", 1000, boost::bind(referee_handler, _1, sm));
 
-  // Initialize the CORE
-  if(sm.init() == -1){
-    ros::shutdown();
-    return 0;
-  }
-
-  
   std::cout << "Init finished\n";
-  
+
   // // Get the 'ball' rolling. Get it?
   // core::Bob command;
   // command.ball = s.searching_for_ball();

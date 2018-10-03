@@ -2,9 +2,9 @@
 #include "statemachine.hpp"
 #include "wheelcontrol.hpp"
 
-#include <cstdio>      // standard input / output functions
-#include <cerrno>      // Error number definitions
-#include <termios.h>    // POSIX terminal control definitions
+#include <cstdio>
+#include <cerrno>
+#include <termios.h>
 #include <cstring>
 #include <iostream>
 #include <fcntl.h>
@@ -17,12 +17,10 @@
 
 void StateMachine::state_machine(void){
   /* Main Loop */
-  
   // If stop signale is set, then set to IDLE
   if(stop_signal || reset_signal){
     reset_signal = false;
     state = IDLE;
-    std::cout << "/!\\" << std::endl;
     return;
   }
 
@@ -31,7 +29,7 @@ void StateMachine::state_machine(void){
     case IDLE:
       // Start searching for the ball
       state = SEARCH_BALL;
-      
+
       break;
     case SEARCH_BALL:
       if(search_for_ball()) state = CENTER_ON_BALL;
@@ -68,21 +66,26 @@ void StateMachine::state_machine(void){
 }
 
 void StateMachine::serial_write(std::string string){
+  // Create a message
   core::Command msg;
   msg.command = string;
+
+  // Publish the message
   publisher.publish(msg);
-  usleep(COMMAND_DELAY);
+
+  // Sleep for the duration of COMMAND_DELAY
+  command_delay.sleep();
 }
 
 void StateMachine::set_stop_signal(bool ref_signal){
   stop_signal = ref_signal;
 }
 
-StateMachine::StateMachine(ros::Publisher& topic) : publisher(topic){
+StateMachine::StateMachine(ros::Publisher& topic) : publisher(topic), command_delay(COMMAND_RATE) {
 
 }
 
-StateMachine::StateMachine(){
+StateMachine::StateMachine() : command_delay(COMMAND_RATE) {
 
 }
 
@@ -96,7 +99,7 @@ template <typename T> int sgn(T val) {
 
 bool StateMachine::search_for_ball(){
   // If the robot hasn't found a ball yet
-  if(true){//!object_in_sight){
+  if(!object_in_sight){
     std::string command = wheel::spin(SPIN_SEARCH_SPEED);
     // NOTE: Testing
     //std::string command = std::string("sd:5:1:1\r\n");
@@ -185,10 +188,6 @@ bool StateMachine::throw_the_ball(){
     command = wheel::stop();
     serial_write(command);
   }
-}
-
-int StateMachine::init(){
-    return 0;
 }
 
 void StateMachine::update_ball_position(int16_t x, int16_t y, uint16_t width, uint16_t height){

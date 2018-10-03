@@ -22,22 +22,34 @@ typedef enum{
 class StateMachine{
 private:
   /* Machine control */
-  bool stop_signal = false;         ///< If set, the robot will be set to and can not exit the IDLE state
-  bool reset_signal = false;        ///< If set, the robot will be set to the IDLE state
+  bool stop_signal = false;    ///< If set, the robot will be set to and can not exit the IDLE state
+  bool reset_signal = false;   ///< If set, the robot will be set to the IDLE state
 
-  /* Internal variables for calculatng the position of the robot, basket, or balls */
-  float object_position_x;  ///< X coordinates of the object
-  float object_position_y;  ///< Y coordinates of the object
-  bool object_in_sight;     ///< True if any objects are in sight
+  /* Position variables */
+  float object_position_x;     ///< X coordinates of the object
+  float object_position_y;     ///< Y coordinates of the object
+  bool object_in_sight;        ///< True if any objects are in sight
 
   /* Serial Communication */
-  int serial;               ///< Handle of the serial port
-  int counter = 0;          ///<
+  int serial;                  ///< Handle of the serial port
 
   /* State variables */
-  state_t state = IDLE;     ///< The internal state of the state machine. For details, refer to state_t
+  state_t state = IDLE;        ///< The internal state of the state machine. For details, refer to state_t
 
-  bool searching_ball = true;
+  /* ROS variables */
+  ros::Publisher publisher;    ///< Publisher object for serial node
+  ros::Rate command_delay;     ///< Delay between sending the commands
+
+  /* Misc variables */
+  bool searching_ball = true;  ///< True if robot requires information about ball position
+
+  /* Communication functions */
+  /**
+   * Function for communicating with serial node.
+   */
+  void serial_write(
+    std::string  ///< [in] String to be sent over serial
+  );
 
   /* Control of the movement and actions */
   /**
@@ -70,9 +82,6 @@ private:
    */
   bool search_for_basket();
 
-  ros::Publisher publisher;
-  void serial_write(std::string);
-
 public:
   /**
    * Main constructor of the State Machine class
@@ -80,7 +89,7 @@ public:
   StateMachine();
 
   /**
-   *
+   * Constructor with publisher object, use this if you want the object to communicate with serial port
    */
   StateMachine(ros::Publisher&);
 
@@ -93,11 +102,6 @@ public:
    * Get the state of the State Machine
    */
   state_t get_state();
-
-  /**
-   * Initialize the State Machine
-   */
-  int init();
 
   /**
    * Reset the State Machine (Restarts from IDLE state)
@@ -136,6 +140,11 @@ public:
    */
   bool searching_for_ball();
 
+  /**
+   * Setter for stop signal.
+   * If stop is set to true, the machine is on hold.
+   * If stop is set to false, the machine behaves regularly
+   */
   void set_stop_signal(bool);
 
 };

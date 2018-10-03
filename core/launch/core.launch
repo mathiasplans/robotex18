@@ -2,9 +2,7 @@
     <group ns="main">
         <node pkg="core" name="TheCore" type="core" respawn="false" output="screen" required="true"/>
     </group>
-    <include file="/home/robot/catkin_ws/src/rosbridge_server/launch/rosbridge_websocket.launch"/>
-    <include file = "$(find serial)/launch/serial.launch">
-    </include>
-    <!-- <include file = "$(find vision)/launch/start.launch">
-    </include> -->
+    <include file = "$(find rosbridge_server)/launch/rosbridge_websocket.launch"/>
+    <include file = "$(find serial)/launch/serial.launch"/>
+    <include file = "$(find vision)/launch/start.launch"/>
 </launch>

@@ -5,9 +5,9 @@
 #include <sstream>
 #include <string>
 
-#include <cstdio>      // standard input / output functions
-#include <cerrno>      // Error number definitions
-#include <termios.h>    // POSIX terminal control definitions
+#include <cstdio>
+#include <cerrno>
+#include <termios.h>
 #include <cstring>
 #include <iostream>
 #include <fcntl.h>
@@ -15,15 +15,12 @@
 #include <cstdlib>
 #include <unistd.h>
 
-#include <poll.h>  // For usart
-
 /**
- *
+ * Referee commands
  */
 #define START_SIGNAL  std::string("START")
 #define STOP_SIGNAL   std::string("STOP")
 #define PING_SIGNAL   std::string("PING")
-
 #define ACK_SIGNAL    std::string("ACK")
 
 
@@ -57,12 +54,6 @@ void serial_init(int* serial){
   // No flow control
   tty.c_cflag &= ~CRTSCTS;
 
-  // // Non-blocking read
-  // tty.c_cc[VMIN] = 1;
-
-  // // Read timeout (0.5s)
-  // tty.c_cc[VTIME] = 5;
-
   // Enable Read and ignore control lines
   tty.c_cflag |= CREAD | CLOCAL;
 
@@ -70,7 +61,7 @@ void serial_init(int* serial){
   cfmakeraw(&tty);
 
   /* Flush Port, then apply attributes */
-  tcflush(*serial, TCIFLUSH );
+  tcflush(*serial, TCIFLUSH);
 
   if(tcsetattr(*serial, TCSANOW, &tty) != 0)
     std::cout << "Error " << errno << " from tcsetattr" << std::endl;
@@ -80,7 +71,7 @@ std::string command, referee;
 bool command_in_buffer = false;
 
 /**
- *
+ * If serial node gets a Command message
  */
 void command_handler(const core::Command::ConstPtr& msg){
   command = msg->command;
@@ -118,22 +109,8 @@ int main(int argc, char **argv){
   // Subscribe to commands topic
   ros::Subscriber commands_topic_in = n.subscribe<core::Command>("commands", 1000, command_handler);
 
-  // Add Message publishing rate
-  ros::Rate loop_rate(10);
-
-  //
   int16_t index = 0, spot = 0;
   char buf = '\0';
-
-  //
-  pollfd poll_file_descriptor = {
-    serial_port,  /* File descriptor */
-    POLLIN,       /* Requested events */
-    0             /* returned events */
-  };
-
-  //
-  int fd_status;
 
   while(ros::ok()){
     // There is something to write
@@ -144,30 +121,13 @@ int main(int argc, char **argv){
 
     // Waiting for Referee commands
     else{
-      // Check the status of the serial line
-      //fd_status = poll(&poll_file_descriptor, 1, 100);
-
-      // Nothing on the serial line
-      //if(fd_status == 0){
-        //ros::spinOnce();
-        //continue;
-      //}
-
-      // An error occurred while polling the serial line
-      //else if(fd_status < 0){
-        //std::cout << std::strerror(errno) << std::endl;
-        //ros::spinOnce();
-        //continue;
-      //}
-
       // Clear the string before each event
       referee.clear();
-      
+
       // Attempt to read the serial port
       do{
           index = read(serial_port, &buf, 1);
           referee.push_back(buf);
-          
       }while(buf != '\r' && index > 0);
 
       // When error occurred
@@ -175,7 +135,6 @@ int main(int argc, char **argv){
         ros::spinOnce();
         continue;
       }
-        //std::cout << "Error while reading from serial: " << strerror(errno) << std::endl;
 
       // Nothing was read
       else if(index == 0){
@@ -184,7 +143,7 @@ int main(int argc, char **argv){
       }
       // Successful read
       else{
-        // Message object, to be sent to referee topic
+        // Message object to be sent to referee topic
         serial::Ref msg;
 
         /* Check if received message was referee signal */

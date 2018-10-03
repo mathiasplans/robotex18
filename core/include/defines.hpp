@@ -1,4 +1,3 @@
-
 /**
  * Spinning speed when searching for a ball/basket
  */
