@@ -212,9 +212,14 @@ bool StateMachine::search_for_basket(){
   std::cout << basket_state << std::endl;
 
   if(basket_state == ORBIT_BALL){
-    if(abs(basket_position_x - FRAME_WIDTH / 2) < 100) basket_state = CENTER_BASKET;
+    if(abs(basket_position_x - FRAME_WIDTH / 2) < POSITION_ERROR * 5 ) {
+      // command = wheel::stop();
+      // ret = true;
+      // basket_state = ORBIT_BALL;
+      basket_state = CENTER_BASKET;
+    }
 
-    command = wheel::move(ORBIT_SPEED, 0, abs(object_position_x - FRAME_WIDTH / 2) * 0.03);
+    command = wheel::move(ORBIT_SPEED, 180, -(object_position_x - FRAME_WIDTH / 2) * 0.03);
 
   }else if(basket_state == CENTER_BASKET){
     if(abs(basket_position_x - FRAME_WIDTH / 2) < POSITION_ERROR) basket_state = ORBIT_BASKET;
@@ -231,7 +236,11 @@ bool StateMachine::search_for_basket(){
     if(basket_position_x > FRAME_WIDTH / 2){
       sign *= -1;
     }
-    command = wheel::move(ORBIT_SPEED * 0.7, 0, sign * abs(basket_position_x - FRAME_WIDTH / 2) * 0.02);
+
+    int16_t dir = 0;
+    if((object_position_x - FRAME_WIDTH / 2) < 0) dir = 180;
+
+    command = wheel::move(ORBIT_SPEED * 0.7, dir, -(basket_position_x - FRAME_WIDTH / 2) * 0.02);
 
     if(abs(object_position_x - FRAME_WIDTH / 2) < POSITION_ERROR){
       command = wheel::stop();
