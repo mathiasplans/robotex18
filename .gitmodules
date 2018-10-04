@@ -1,9 +1,7 @@
-
 [submodule "async_web_server_cpp"]
 	path = async_web_server_cpp
 	url = git@github.com:GT-RAIL/async_web_server_cpp.git
 	ignore = all
-
 [submodule "web_video_server"]
 	path = web_video_server
 	url = https://github.com/mathiasplans/web_video_server.git
@@ -11,3 +9,8 @@
 [submodule "realsense"]
 	path = realsense
 	url = https://github.com/intel-ros/realsense.git
+  ignore = all
+[submodule "rosbridge_suite"]
+	path = rosbridge_suite
+	url = https://github.com/RobotWebTools/rosbridge_suite.git
+  ignore = all

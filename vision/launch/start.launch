@@ -4,6 +4,6 @@
         <node pkg="vision" name="ball_detection" type="ball_detection" output="screen" if="$(arg ball)"/>
         <node pkg="vision" name="basket_detection" type="basket_detection" output="screen" if="$(arg basket)"/>
         <node pkg="web_video_server" name="web" type="web_video_server" output="screen"/>
-        <include file="/home/robot/catkin_ws/src/rosbridge_server/launch/rosbridge_websocket.launch"/>
+        <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch"/>
     </group>
 </launch>
