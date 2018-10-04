@@ -33,7 +33,7 @@ bool requested = false;
 // --------------------------------------------
 void detection_callback(const sensor_msgs::ImageConstPtr& ros_frame, image_transport::Publisher& pub, ros::Publisher& bpub){
     // If no basket was requested then do not run the logic
-    if(!requested) return;
+    // if(!requested) return;
 
     //Convert ros image back to cv::Mat
     cv_bridge::CvImagePtr ptr;
@@ -71,10 +71,12 @@ void detection_callback(const sensor_msgs::ImageConstPtr& ros_frame, image_trans
     int foundCount = 0;
     
     for( int i = 0; i< contours.size(); i++ ){
-        if(boundRect[i].width > boundRect[i].height * 0.7) continue;
+        // if(boundRect[i].width > boundRect[i].height * 0.4) continue;
         foundCount++;
         
         int area = boundRect[i].width * boundRect[i].height;
+
+        if(area < 40 * 40) continue;
 
         if(area > largestArea){
             largestIndex = i;

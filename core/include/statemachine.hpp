@@ -13,6 +13,12 @@ typedef enum{
   CORRECT_POSITION  ///< If the basket is in the middle of the frame and the ball isn't, correct the positon
 }state_t;
 
+typedef enum{
+  ORBIT_BALL,
+  CENTER_BASKET,
+  ORBIT_BASKET
+}basket_state_t;
+
 /**
  * The class for the main State Machine of the robot
  */
@@ -25,8 +31,11 @@ private:
   /* Internal variables for calculatng the position of the robot, basket, or balls */
   float object_position_x;  ///< X coordinates of the object
   float object_position_y;  ///< Y coordinates of the object
+  float basket_position_x;  ///< X coordinates of the basket
+  float basket_position_y;  ///< Y coordinates of the basket
   bool object_in_sight;     ///< True if any objects are in sight
-  float object_degrees_x = 0;
+  bool basket_in_sight;
+  bool basket_found = false;
 
   /* Serial Communication */
   int serial;               ///< Handle of the serial port
@@ -34,6 +43,7 @@ private:
 
   /* State variables */
   state_t state = IDLE;     ///< The internal state of the state machine. For details, refer to state_t
+  basket_state_t basket_state = ORBIT_BALL;
 
   bool searching_ball = true;
 
@@ -114,10 +124,21 @@ public:
     uint16_t height  ///< [in] Height of the camera's frame
   );
 
+  void update_basket_position(
+    int16_t x,       ///< [in] X coordinates of the object
+    int16_t y,       ///< [in] Y coordinates of the object
+    uint16_t width,  ///< [in] Width of the camera's frame
+    uint16_t height  ///< [in] Height of the camera's frame
+  );
+
   /**
    * Lets the State Machine know if any objects are in sight (Balls, baskets, etc.)
    */
   void set_object_in_sight(
+    bool in_sight  ///< [in] True if something is in sight
+  );
+
+  void set_basket_in_sight(
     bool in_sight  ///< [in] True if something is in sight
   );
 

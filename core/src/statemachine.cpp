@@ -22,6 +22,7 @@ void StateMachine::state_machine(void){
   if(stop_signal || reset_signal){
     reset_signal = false;
     state = IDLE;
+    std::cout << "hi\n";
     return;
   }
 
@@ -58,6 +59,7 @@ void StateMachine::state_machine(void){
       break;
 
     case CORRECT_POSITION:
+    std::cout << "here0\n";
       break;
 
     default:
@@ -175,12 +177,12 @@ bool StateMachine::center_on_ball(){
 
 bool StateMachine::goto_ball(){
   // If the ball is not in front of the robot
-  if(( object_position_y < BALL_IN_FRONT)){
-
+  if((object_position_y < BALL_IN_FRONT)){
+    std::cout << "here1\n";
     // In case the ball moves out of the pos error range then rotate a little bit
     double angv = 0;
     if(abs(object_position_x - FRAME_WIDTH / 2) > POSITION_ERROR){
-      angv += SPIN_CENTER_SPEED * 1.5;
+      angv += SPIN_SEARCH_SPEED / 1.4;
       if(object_position_x > FRAME_WIDTH / 2){
         angv *= -1;
       }
@@ -188,7 +190,7 @@ bool StateMachine::goto_ball(){
     
     std::string command = wheel::move(MOVING_SPEED, 90, angv);
     write(serial, command.c_str(), command.size());
-    std::cout << object_degrees_x << std::endl;
+    // std::cout << object_degrees_x << std::endl;
     usleep(COMMAND_DELAY);
 
     return false;
@@ -205,20 +207,42 @@ bool StateMachine::goto_ball(){
 
 bool StateMachine::search_for_basket(){
   // The basket and the ball are not in the center of the frame
-  if(true){//object_position_x < -POSITION_ERROR || object_position_x > POSITION_ERROR){
-    std::string command = wheel::move(ORBIT_SPEED, 0, abs(object_position_x - FRAME_WIDTH / 2) * 0.01);
-    write(serial, command.c_str(), command.size());
-    usleep(COMMAND_DELAY);
-    return false;
+  std::string command;
+  bool ret = false;
+  std::cout << basket_state << std::endl;
+
+  if(basket_state == ORBIT_BALL){
+    if(abs(basket_position_x - FRAME_WIDTH / 2) < 100) basket_state = CENTER_BASKET;
+
+    command = wheel::move(ORBIT_SPEED, 0, abs(object_position_x - FRAME_WIDTH / 2) * 0.03);
+
+  }else if(basket_state == CENTER_BASKET){
+    if(abs(basket_position_x - FRAME_WIDTH / 2) < POSITION_ERROR) basket_state = ORBIT_BASKET;
+
+    double angv = SPIN_CENTER_SPEED * 1.4;
+    if(basket_position_x > FRAME_WIDTH / 2){
+      angv *= -1;
+    }
+
+    command = wheel::move(0, 0, angv);
+
+  }else if(basket_state == ORBIT_BASKET){
+    int16_t sign = 1;
+    if(basket_position_x > FRAME_WIDTH / 2){
+      sign *= -1;
+    }
+    command = wheel::move(ORBIT_SPEED * 0.7, 0, sign * abs(basket_position_x - FRAME_WIDTH / 2) * 0.02);
+
+    if(abs(object_position_x - FRAME_WIDTH / 2) < POSITION_ERROR){
+      command = wheel::stop();
+      ret = true;
+      basket_state = ORBIT_BALL;
+    }
   }
 
-  // The basket and the ball are in the center of the frame
-  else{
-    std::string command = wheel::stop();
-    write(serial, command.c_str(), command.size());
-    usleep(COMMAND_DELAY);
-    return true;
-  }
+  write(serial, command.c_str(), command.size());
+  usleep(COMMAND_DELAY);
+  return ret;
 }
 
 bool StateMachine::throw_the_ball(){
@@ -230,7 +254,7 @@ bool StateMachine::throw_the_ball(){
     usleep(COMMAND_DELAY / 2);
 
     // Wheel control
-    command = wheel::move(MOVING_SPEED, 0, 0);
+    command = wheel::move(MOVING_SPEED_THROW, 90, 0);
     write(serial, command.c_str(), command.size());
     usleep(COMMAND_DELAY / 2);
     return false;
@@ -270,14 +294,26 @@ int StateMachine::init(){
   return 0;
 }
 
+state_t StateMachine::get_state(){
+  return state;
+}
+
 void StateMachine::update_ball_position(int16_t x, int16_t y, uint16_t width, uint16_t height){
   object_position_x = x;
   object_position_y = y;
-  // if(x >= 0) object_degrees_x = object_position_x * CAMERA_FOV_X/FRAME_WIDTH;
+}
+
+void StateMachine::update_basket_position(int16_t x, int16_t y, uint16_t width, uint16_t height){
+  basket_position_x = x + width/2;
+  basket_position_y = y;
 }
 
 void StateMachine::set_object_in_sight(bool in_sight){
   object_in_sight = in_sight;
+}
+
+void StateMachine::set_basket_in_sight(bool in_sight){
+  basket_in_sight = in_sight;
 }
 
 void StateMachine::reset_machine(){

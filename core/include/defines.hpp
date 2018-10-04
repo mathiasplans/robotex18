@@ -24,7 +24,7 @@
 /**
  * Moving speed when aproaching a ball when throwing
  */
-#define MOVING_SPEED_THROW    1
+#define MOVING_SPEED_THROW    10
 
 /**
  * Moving speed when orbiting an object

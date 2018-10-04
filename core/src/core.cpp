@@ -13,10 +13,10 @@ StateMachine s;
  * Handles
  */
 void vision_callback(const vision::Ball::ConstPtr& msg, ros::Publisher& bob){
-  ROS_INFO("I heard: [%d, %d]", msg->ballX, msg->ballY);
+  // ROS_INFO("I heard: [%d, %d]", msg->ballX, msg->ballY);
   
   if(msg->ballX < 0) {
-    s.reset_machine();
+    if(s.get_state() != THROW) s.reset_machine();
   }else{
     s.update_ball_position(msg->ballX, msg->ballY, msg->width, msg->height);
     s.set_object_in_sight(true);
@@ -32,10 +32,14 @@ void vision_callback(const vision::Ball::ConstPtr& msg, ros::Publisher& bob){
  * Note: Ball message is reused for basket aswell
  */
 void vision_callback2(const vision::Ball::ConstPtr& msg, ros::Publisher& bob){
-  ROS_INFO("I heard: [%d, %d]", msg->ballX, msg->ballY);
-  if(msg->ballX < 0) s.reset_machine();
-  s.update_ball_position(msg->ballX, msg->ballY, msg->width, msg->height);
-  s.set_object_in_sight(true);
+  // ROS_INFO("I heard: [%d, %d]", msg->ballX, msg->ballY);
+  
+  if(msg->ballX < 0) {
+    // s.reset_machine();
+  }else{
+    s.update_basket_position(msg->ballX, msg->ballY, msg->width, msg->height);
+    s.set_basket_in_sight(true);
+  }
   core::Bob command;
   command.ball = s.searching_for_ball();
   bob.publish(command);
