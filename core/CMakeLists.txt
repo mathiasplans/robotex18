@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(core)
 add_compile_options(-std=c++11)
+
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
-  message_generation
   vision
   serial
   message_generation
@@ -16,10 +16,10 @@ include_directories(
   include/
   ${Boost_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
-  ${Boost_INCLUDE_DIRS}
 )
 
 add_message_files(FILES Command.msg)
+add_message_files(FILES Bob.msg)
 generate_messages(DEPENDENCIES std_msgs)
 
 catkin_package()
