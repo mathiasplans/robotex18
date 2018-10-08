@@ -20,7 +20,10 @@ void vision_callback(const vision::Ball::ConstPtr& msg, StateMachine& sm){
  * Handles the message from serial package
  */
 void referee_handler(const serial::Ref::ConstPtr& msg, StateMachine& sm){
-  sm.set_stop_signal(!msg->start);
+  if(msg->start)
+    sm.start_machine();
+  else
+    sm.stop_machine();
 }
 
 int main(int argc, char **argv){

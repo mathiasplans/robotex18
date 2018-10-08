@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(serial)
 
+
+add_compile_options(-std=c++14)
+
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   sensor_msgs
@@ -9,7 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
 )
 
-add_message_files(FILES Ref.msg)
+add_message_files(FILES Ref.msg WheelSpeed.msg)
 generate_messages(DEPENDENCIES std_msgs)
 
 catkin_package(

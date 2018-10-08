@@ -1,5 +1,6 @@
 #include <ros/ros.h>
 #include <serial/Ref.h>
+#include <serial/WheelSpeed.h>
 #include <core/Command.h>
 
 #include <sstream>
@@ -18,8 +19,8 @@
 /**
  * Referee commands
  */
-#define DB_FIELD     A
-#define DB_ROBOT_NO  A
+#define DB_FIELD     "A"
+#define DB_ROBOT_NO  "A"
 
 #define START std::string("START---->")
 #define STOP  std::string("STOP----->")
@@ -30,15 +31,15 @@
 #define SIGNAL(field, robot_letter)  std::string("<ref:a") + std::string(field) +  std::string(robot_letter)
 
 
-#define START_SIGNAL_ALL(field)            ALL_SIGNAL(field)           + START
-#define START_SIGNAL(field, robot_letter)  SIGNAL(field, robot_letter) + START
+#define START_SIGNAL_ALL(field)            (ALL_SIGNAL(field)           + START)
+#define START_SIGNAL(field, robot_letter) ( SIGNAL(field, robot_letter) + START)
 
-#define STOP_SIGNAL_ALL(field)            ALL_SIGNAL(field)           + STOP
-#define STOP_SIGNAL(field, robot_letter)  SIGNAL(field, robot_letter) + STOP
+#define STOP_SIGNAL_ALL(field)           ( ALL_SIGNAL(field)           + STOP)
+#define STOP_SIGNAL(field, robot_letter) ( SIGNAL(field, robot_letter) + STOP)
 
-#define PING_SIGNAL(field, robot_letter)  SIGNAL(field, robot_letter) + PING
+#define PING_SIGNAL(field, robot_letter)  (SIGNAL(field, robot_letter) + PING)
 
-#define ACK_SIGNAL(field, robot_letter)    SIGNAL(field, robot_letter) + ACK
+#define ACK_SIGNAL(field, robot_letter)    (SIGNAL(field, robot_letter) + ACK)
 
 
 void serial_init(int* serial){
@@ -95,12 +96,23 @@ void command_handler(const core::Command::ConstPtr& msg){
   command_in_buffer = true;
 }
 
+int serial_port;
+
+
+void write_cmd(std::string cmd) {
+  auto write_string = cmd + "\n";
+  write(serial_port, write_string.c_str(), write_string.size());
+}
+
+
 int main(int argc, char **argv){
   /* Serial code */
   std::cout << "Opening serial" << std::endl;
 
+
+
   // Open the serial port
-  int serial_port = open("/dev/ttyACM0", O_RDWR | O_NOCTTY | O_NDELAY);
+  serial_port = open("/dev/ttyACM0", O_RDWR | O_NOCTTY | O_NDELAY);
 
   // Opening the serial port failed
   if(serial_port == -1){
@@ -113,6 +125,7 @@ int main(int argc, char **argv){
   /* Serial communcication */
   /* https://stackoverflow.com/a/18134892 */
   serial_init(&serial_port);
+  
 
   /* ROS settings */
   ros::init(argc, argv, "serial");
@@ -121,13 +134,17 @@ int main(int argc, char **argv){
   ros::NodeHandle n;
 
   // Add the referee topic to topics pool
-  ros::Publisher referee_topic_out = n.advertise<serial::Ref>("referee_signals", 1000);
+  ros::Publisher referee_topic_out = n.advertise<serial::Ref>("referee_signals", 128);
+
+  // Wheel speed topic
+  ros::Publisher wheel_topic_out = n.advertise<serial::WheelSpeed>("wheelspeed", 128);
 
   // Subscribe to commands topic
   ros::Subscriber commands_topic_in = n.subscribe<core::Command>("commands", 1000, command_handler);
 
-  int16_t index = 0, spot = 0;
+  auto index = 0;
   char buf = '\0';
+  char read_buf[1024];
 
   while(ros::ok()){
     // There is something to write
@@ -139,17 +156,15 @@ int main(int argc, char **argv){
     // Waiting for Referee commands
     else{
       // Clear the string before each event
-      referee.clear();
+      //referee.clear();
 
       // Attempt to read the serial port
-      do{
-          index = read(serial_port, &buf, 1);
-          referee.push_back(buf);
-      }while(buf != '\r' && index > 0);
+      index = read(serial_port, &read_buf, 1024);
 
       // When error occurred
       if(index < 0){
         ros::spinOnce();
+        //std::cout << "Serial read error" << "\n";
         continue;
       }
 
@@ -159,35 +174,79 @@ int main(int argc, char **argv){
         continue;
       }
       // Successful read
-      else{
+      else {
+        
+        referee.append(read_buf, index);
+      
+        
+        // need to read more
+        auto message_end = referee.find('\n');
+        if (message_end == std::string::npos) {
+          ros::spinOnce();
+          continue;
+        }
+
+        auto message = referee.substr(0, message_end);
+        referee = referee.substr(message_end+1);
+
+        if (message == "") {
+          ros::spinOnce();
+          continue;
+        }
+
         // Message object to be sent to referee topic
         serial::Ref msg;
 
+        std::cout << "Message from serial port: " << message << std::endl;
+
         /* Check if received message was referee signal */
         // Robot received start signal
-        if(referee.compare(START_SIGNAL(DB_FIELD, DB_ROBOT_NO)))
+        if(message == (START_SIGNAL(DB_FIELD, DB_ROBOT_NO))) {
           msg.start = true;
-
+        }
         // Robot received stop signal
-        else if(referee.compare(STOP_SIGNAL(DB_FIELD, DB_ROBOT_NO)))
+        else if(message == (STOP_SIGNAL(DB_FIELD, DB_ROBOT_NO))) {
           msg.start = false;
-
+        }
+          
         // Robot received ping signal, send ACK
-        else if(referee.compare(PING_SIGNAL(DB_FIELD, DB_ROBOT_NO)))
+        else if(message == (PING_SIGNAL(DB_FIELD, DB_ROBOT_NO))) {
           write(serial_port, ACK_SIGNAL(DB_FIELD, DB_ROBOT_NO).c_str(), ACK_SIGNAL(DB_FIELD, DB_ROBOT_NO).size());
+        } 
+
+        // Robot received wheel rotation
+        else if (message.find("<gs") != std::string::npos) {
+          serial::WheelSpeed speeds;
+
+
+          size_t second_colon = message.find(":", 4);
+          std::cout << "first: " << message.substr(4, second_colon-4) << "\n";
+          speeds.wheel1 = stoi(message.substr(4, second_colon-4));
+          
+          size_t third_colon = message.find(":", second_colon+1);
+          
+          std::cout << "second: " << message.substr(first_colon+1, second_colon-first_colon-1) << "\n";
+          speeds.wheel2 = stoi(message.substr(first_colon+1, second_colon-first_colon));
+          
+          size_t last = message.find(">", second_colon+1);
+          std::cout << "third: " << message.substr(second_colon+1, last-second_colon-1) << "\n";
+          speeds.wheel3 = stoi(message.substr(second_colon+1, last-second_colon));
+
+          wheel_topic_out.publish(speeds);
+        }
 
         // Received message was not a referee signal
-        else
-          std::cout << "Received serial message was not a referee signal:" << std::endl << "\t" << referee.c_str() << std::endl;
+        else {
+          std::cout << "Received serial message was not a referee signal nor a wheel signal:" << std::endl << "\t" << message << std::endl;
           continue;
+        }
 
         // Publish the message to referee topic
-        std::cout << "Message from serial port: " << referee.c_str() << std::endl;
         referee_topic_out.publish(msg);
       }
 
       // Refresh loop variables
-      index = spot = 0;
+      index = 0;
 
     }
 
