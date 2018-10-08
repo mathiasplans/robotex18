@@ -18,10 +18,27 @@
 /**
  * Referee commands
  */
-#define START_SIGNAL  std::string("START")
-#define STOP_SIGNAL   std::string("STOP")
-#define PING_SIGNAL   std::string("PING")
-#define ACK_SIGNAL    std::string("ACK")
+#define DB_FIELD     A
+#define DB_ROBOT_NO  A
+
+#define START std::string("START---->")
+#define STOP  std::string("STOP----->")
+#define PING  std::string("PING----->")
+#define ACK   std::string("ACK------>")
+
+#define ALL_SIGNAL(field)            std::string("<ref:a") + std::string(field) + std::string("X")
+#define SIGNAL(field, robot_letter)  std::string("<ref:a") + std::string(field) +  std::string(robot_letter)
+
+
+#define START_SIGNAL_ALL(field)            ALL_SIGNAL(field)           + START
+#define START_SIGNAL(field, robot_letter)  SIGNAL(field, robot_letter) + START
+
+#define STOP_SIGNAL_ALL(field)            ALL_SIGNAL(field)           + STOP
+#define STOP_SIGNAL(field, robot_letter)  SIGNAL(field, robot_letter) + STOP
+
+#define PING_SIGNAL(field, robot_letter)  SIGNAL(field, robot_letter) + PING
+
+#define ACK_SIGNAL(field, robot_letter)    SIGNAL(field, robot_letter) + ACK
 
 
 void serial_init(int* serial){
@@ -148,16 +165,16 @@ int main(int argc, char **argv){
 
         /* Check if received message was referee signal */
         // Robot received start signal
-        if(referee.compare(START_SIGNAL))
+        if(referee.compare(START_SIGNAL(DB_FIELD, DB_ROBOT_NO)))
           msg.start = true;
 
         // Robot received stop signal
-        else if(referee.compare(STOP_SIGNAL))
+        else if(referee.compare(STOP_SIGNAL(DB_FIELD, DB_ROBOT_NO)))
           msg.start = false;
 
         // Robot received ping signal, send ACK
-        else if(referee.compare(PING_SIGNAL))
-          write(serial_port, ACK_SIGNAL.c_str(), ACK_SIGNAL.size());
+        else if(referee.compare(PING_SIGNAL(DB_FIELD, DB_ROBOT_NO)))
+          write(serial_port, ACK_SIGNAL(DB_FIELD, DB_ROBOT_NO).c_str(), ACK_SIGNAL(DB_FIELD, DB_ROBOT_NO).size());
 
         // Received message was not a referee signal
         else
