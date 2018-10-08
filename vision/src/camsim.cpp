@@ -31,7 +31,7 @@ int main(int argc, char **argv){
 
     #ifdef fake_camera
     // VideoCapture cap("/home/robot/vids/basket_blue.mp4");
-    VideoCapture cap("/home/robot/vids/balls2.mp4");
+    VideoCapture cap("/home/robot/vids/basket_blue.mp4");
     #else
     VideoCapture cap(2);
     #endif

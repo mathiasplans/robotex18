@@ -219,6 +219,7 @@ bool StateMachine::search_for_basket(){
       basket_state = CENTER_BASKET;
     }
 
+
     command = wheel::move(ORBIT_SPEED, 180, -(object_position_x - FRAME_WIDTH / 2) * 0.03);
 
   }else if(basket_state == CENTER_BASKET){
@@ -251,6 +252,7 @@ bool StateMachine::search_for_basket(){
 
   write(serial, command.c_str(), command.size());
   usleep(COMMAND_DELAY);
+  std::cout << ret << std::endl;
   return ret;
 }
 

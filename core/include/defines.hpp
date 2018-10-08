@@ -19,7 +19,7 @@
 /**
  * Moving speed when moving around the arena
  */
-#define MOVING_SPEED          25
+#define MOVING_SPEED          35
 
 /**
  * Moving speed when aproaching a ball when throwing
@@ -29,7 +29,7 @@
 /**
  * Moving speed when orbiting an object
  */
-#define ORBIT_SPEED           30.0f
+#define ORBIT_SPEED           20.0f
 
 /**
  * Position error of an object. That is how many pixels can an object be out of the intended position.
