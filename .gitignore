@@ -31,3 +31,6 @@ build
 *.out
 *.app
 *.pyc
+
+# ssh key
+robot_bridge.pem

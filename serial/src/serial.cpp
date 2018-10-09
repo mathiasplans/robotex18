@@ -85,7 +85,7 @@ void serial_init(int* serial){
     std::cout << "Error " << errno << " from tcsetattr" << std::endl;
 }
 
-std::string command, referee;
+std::string command, message_buffer;
 bool command_in_buffer = false;
 
 /**
@@ -98,10 +98,34 @@ void command_handler(const core::Command::ConstPtr& msg){
 
 int serial_port;
 
-
 void write_cmd(std::string cmd) {
   auto write_string = cmd + "\n";
   write(serial_port, write_string.c_str(), write_string.size());
+}
+
+
+// Mimicking pythons split function
+std::vector<std::string> split(std:string str, std::string sep = " ") {
+  auto result = std::vector<std::string>();
+
+  size_t start = 0;
+  size_t end   = str.find(sep);
+  while(end != std::string::npos) {
+    result.push_back(str.substr(start, end-start));
+    start = end + sep.length();
+    end = s.find(sep, start);
+  }
+  result.push_back(str.substr(start, end));
+
+  return result;
+}
+
+// remove the tags of the message
+std::string remove_tags(std::string str) {
+  if (str[0] == '<' and str[str.length()-2] == '>') {
+    return str.substr(1, str.length()-3);
+  }
+  return "";
 }
 
 
@@ -143,10 +167,12 @@ int main(int argc, char **argv){
   ros::Subscriber commands_topic_in = n.subscribe<core::Command>("commands", 1000, command_handler);
 
   auto index = 0;
-  char buf = '\0';
-  char read_buf[1024];
+  char read_buf[32];
 
   while(ros::ok()){
+    // what happens when we have something to read while at the same time, needing to write?
+    // possible fix: write after reading.
+    
     // There is something to write
     if(command_in_buffer){
       write(serial_port, command.c_str(), command.size());
@@ -155,39 +181,32 @@ int main(int argc, char **argv){
 
     // Waiting for Referee commands
     else{
-      // Clear the string before each event
-      //referee.clear();
 
       // Attempt to read the serial port
-      index = read(serial_port, &read_buf, 1024);
+      index = read(serial_port, &read_buf, 32);
 
-      // When error occurred
-      if(index < 0){
+      // When error occurred or nothing was read
+      if(index <= 0 ){
         ros::spinOnce();
         //std::cout << "Serial read error" << "\n";
-        continue;
-      }
-
-      // Nothing was read
-      else if(index == 0){
-        ros::spinOnce();
         continue;
       }
       // Successful read
       else {
         
-        referee.append(read_buf, index);
-      
+
+        message_buffer.append(read_buf, index);
         
-        // need to read more
-        auto message_end = referee.find('\n');
+        // need to read more. no complete message
+        auto message_end = message_buffer.find('\n');
         if (message_end == std::string::npos) {
           ros::spinOnce();
           continue;
         }
 
-        auto message = referee.substr(0, message_end);
-        referee = referee.substr(message_end+1);
+        // extract one message from the buffer
+        auto message = message_buffer.substr(0, message_end);
+        message_buffer = message_buffer.substr(message_end+1);
 
         if (message == "") {
           ros::spinOnce();
@@ -218,19 +237,13 @@ int main(int argc, char **argv){
         else if (message.find("<gs") != std::string::npos) {
           serial::WheelSpeed speeds;
 
-
-          size_t second_colon = message.find(":", 4);
-          std::cout << "first: " << message.substr(4, second_colon-4) << "\n";
-          speeds.wheel1 = stoi(message.substr(4, second_colon-4));
+          const auto tagless_message = remove_tags(message);
+          const auto split_message = split(tagless_message, ":");
           
-          size_t third_colon = message.find(":", second_colon+1);
-          
-          std::cout << "second: " << message.substr(first_colon+1, second_colon-first_colon-1) << "\n";
-          speeds.wheel2 = stoi(message.substr(first_colon+1, second_colon-first_colon));
-          
-          size_t last = message.find(">", second_colon+1);
-          std::cout << "third: " << message.substr(second_colon+1, last-second_colon-1) << "\n";
-          speeds.wheel3 = stoi(message.substr(second_colon+1, last-second_colon));
+          // split message should be for example [gs, 5, 100, -20]
+          speeds.wheel1 = stoi(split_message[1]);
+          speeds.wheel2 = stoi(split_message[2]);
+          speeds.wheel3 = stoi(split_message[3]);
 
           wheel_topic_out.publish(speeds);
         }
