@@ -103,9 +103,16 @@ void write_cmd(std::string cmd) {
   write(serial_port, write_string.c_str(), write_string.size());
 }
 
+// removes the message tags in the front and back
+std::string remove_tags(std::string &&str) {
+  if (str[0] == '<' and str[str.length()-2] == '>') {
+    return str.substr(1, str.length()-3);
+  }
+  return "";
+}
 
 // Mimicking pythons split function
-std::vector<std::string> split(std:string str, std::string sep = " ") {
+std::vector<std::string> split(std::string str, std::string sep = " ") {
   auto result = std::vector<std::string>();
 
   size_t start = 0;
@@ -113,19 +120,11 @@ std::vector<std::string> split(std:string str, std::string sep = " ") {
   while(end != std::string::npos) {
     result.push_back(str.substr(start, end-start));
     start = end + sep.length();
-    end = s.find(sep, start);
+    end = str.find(sep, start);
   }
   result.push_back(str.substr(start, end));
 
   return result;
-}
-
-// remove the tags of the message
-std::string remove_tags(std::string str) {
-  if (str[0] == '<' and str[str.length()-2] == '>') {
-    return str.substr(1, str.length()-3);
-  }
-  return "";
 }
 
 
@@ -208,7 +207,7 @@ int main(int argc, char **argv){
         auto message_tagged = message_buffer.substr(0, message_end);
         message_buffer = message_buffer.substr(message_end+1);
 
-        if (message == "") {
+        if (message_tagged == "") {
           ros::spinOnce();
           continue;
         }
