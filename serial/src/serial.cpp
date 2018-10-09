@@ -105,8 +105,10 @@ void write_cmd(std::string cmd) {
 
 // removes the message tags in the front and back
 std::string remove_tags(std::string str) {
-  if (str[0] == '<' and str[str.length()-2] == '>') {
-    return str.substr(1, str.length()-3);
+  auto last = str.find('>');
+
+  if (str[0] == '<' && last != std::string::npos ) {
+    return str.substr(1, last-1);
   }
   return "";
 }
