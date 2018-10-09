@@ -22,13 +22,13 @@
 #define DB_FIELD     "A"
 #define DB_ROBOT_NO  "A"
 
-#define START std::string("START---->")
-#define STOP  std::string("STOP----->")
-#define PING  std::string("PING----->")
-#define ACK   std::string("ACK------>")
+#define START std::string("START----")
+#define STOP  std::string("STOP-----")
+#define PING  std::string("PING-----")
+#define ACK   std::string("ACK------")
 
-#define ALL_SIGNAL(field)            std::string("<ref:a") + std::string(field) + std::string("X")
-#define SIGNAL(field, robot_letter)  std::string("<ref:a") + std::string(field) +  std::string(robot_letter)
+#define ALL_SIGNAL(field)            std::string("ref:a") + std::string(field) + std::string("X")
+#define SIGNAL(field, robot_letter)  std::string("ref:a") + std::string(field) +  std::string(robot_letter)
 
 
 #define START_SIGNAL_ALL(field)            (ALL_SIGNAL(field)           + START)
@@ -205,7 +205,7 @@ int main(int argc, char **argv){
         }
 
         // extract one message from the buffer
-        auto message = message_buffer.substr(0, message_end);
+        auto message_tagged = message_buffer.substr(0, message_end);
         message_buffer = message_buffer.substr(message_end+1);
 
         if (message == "") {
@@ -213,34 +213,37 @@ int main(int argc, char **argv){
           continue;
         }
 
-        // Message object to be sent to referee topic
-        serial::Ref msg;
+        auto message = remove_tags(message_tagged);        
 
         std::cout << "Message from serial port: " << message << std::endl;
 
         /* Check if received message was referee signal */
-        // Robot received start signal
-        if(message == (START_SIGNAL(DB_FIELD, DB_ROBOT_NO))) {
-          msg.start = true;
-        }
-        // Robot received stop signal
-        else if(message == (STOP_SIGNAL(DB_FIELD, DB_ROBOT_NO))) {
-          msg.start = false;
-        }
-          
-        // Robot received ping signal, send ACK
-        else if(message == (PING_SIGNAL(DB_FIELD, DB_ROBOT_NO))) {
-          write(serial_port, ACK_SIGNAL(DB_FIELD, DB_ROBOT_NO).c_str(), ACK_SIGNAL(DB_FIELD, DB_ROBOT_NO).size());
-        } 
+        if(message.find("ref") != std::string::npos) {
+          // Message object to be sent to referee topic
+          serial::Ref msg;
 
+          // Robot received start signal
+          if(message == (START_SIGNAL(DB_FIELD, DB_ROBOT_NO))) {
+            msg.start = true;
+          }
+          // Robot received stop signal
+          else if(message == (STOP_SIGNAL(DB_FIELD, DB_ROBOT_NO))) {
+            msg.start = false;
+          }
+          // Robot received ping signal, send ACK
+          else if(message == (PING_SIGNAL(DB_FIELD, DB_ROBOT_NO))) {
+            write(serial_port, ACK_SIGNAL(DB_FIELD, DB_ROBOT_NO).c_str(), ACK_SIGNAL(DB_FIELD, DB_ROBOT_NO).size());
+          }
+          referee_topic_out.publish(msg);
+        }
+        
         // Robot received wheel rotation
-        else if (message.find("<gs") != std::string::npos) {
+        else if (message.find("gs") != std::string::npos) {
           serial::WheelSpeed speeds;
 
-          const auto tagless_message = remove_tags(message);
-          const auto split_message = split(tagless_message, ":");
+          const auto split_message = split(message, ":");
           
-          // split message should be for example [gs, 5, 100, -20]
+          // split_message should be for example [gs, 5, 100, -20]
           speeds.wheel1 = stoi(split_message[1]);
           speeds.wheel2 = stoi(split_message[2]);
           speeds.wheel3 = stoi(split_message[3]);
@@ -248,14 +251,13 @@ int main(int argc, char **argv){
           wheel_topic_out.publish(speeds);
         }
 
-        // Received message was not a referee signal
+        // Received message is unknown
         else {
-          std::cout << "Received serial message was not a referee signal nor a wheel signal:" << std::endl << "\t" << message << std::endl;
+          std::cout << "Received serial message was not a known command :" << std::endl << "\t" << message << std::endl;
           continue;
         }
 
         // Publish the message to referee topic
-        referee_topic_out.publish(msg);
       }
 
       // Refresh loop variables
