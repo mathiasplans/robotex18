@@ -212,9 +212,13 @@ int main(int argc, char **argv){
           continue;
         }
 
-        auto message = remove_tags(message_tagged);        
+        std::cout << "Message from serial port: " << message_tagged << std::endl;
 
-        std::cout << "Message from serial port: " << message << std::endl;
+        auto message = remove_tags(message_tagged);
+        if (message == "") {
+          
+        }    
+
 
         /* Check if received message was referee signal */
         if(message.find("ref") != std::string::npos) {
