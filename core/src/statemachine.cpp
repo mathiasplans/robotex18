@@ -21,6 +21,7 @@ void StateMachine::state_machine(void){
   if(stop_signal || reset_signal){
     reset_signal = false;
     state = IDLE;
+    std::cout << "hi\n";
     return;
   }
 
@@ -32,7 +33,7 @@ void StateMachine::state_machine(void){
 
       break;
     case SEARCH_BALL:
-      if(search_for_ball()) state = CENTER_ON_BALL;
+      if(search_for_ball()) state = MOVE_TO_BALL;
       searching_ball = true;
       break;
 
@@ -57,6 +58,7 @@ void StateMachine::state_machine(void){
       break;
 
     case CORRECT_POSITION:
+    std::cout << "here0\n";
       break;
 
     default:
@@ -100,7 +102,7 @@ template <typename T> int sgn(T val) {
 bool StateMachine::search_for_ball(){
   // If the robot hasn't found a ball yet
   if(!object_in_sight){
-    std::string command = wheel::spin(SPIN_SEARCH_SPEED);
+    std::string command = wheel::move(0, 0, SPIN_SEARCH_SPEED);
     // NOTE: Testing
     //std::string command = std::string("sd:5:1:1\r\n");
     serial_write(command);
@@ -118,8 +120,13 @@ bool StateMachine::search_for_ball(){
 
 bool StateMachine::center_on_ball(){
   // If the ball is not at the center of the frame
-  if(object_position_x < -POSITION_ERROR || object_position_x > POSITION_ERROR){
-    std::string command = wheel::spin(SPIN_CENTER_SPEED * sgn(object_position_x));
+  if(abs(object_position_x - FRAME_WIDTH / 2) > POSITION_ERROR){
+    double angv = SPIN_CENTER_SPEED;
+    if(object_position_x > FRAME_WIDTH / 2){
+      angv *= -1;
+    }
+
+    std::string command = wheel::move(0, 0, angv);
     serial_write(command);
     return false;
   }
@@ -135,9 +142,19 @@ bool StateMachine::center_on_ball(){
 
 bool StateMachine::goto_ball(){
   // If the ball is not in front of the robot
-  if(object_position_y > BALL_IN_FRONT + POSITION_ERROR || object_position_y < BALL_IN_FRONT - POSITION_ERROR){
-    std::string command = wheel::move(MOVING_SPEED, object_position_x * CAMERA_FOV_X);
+  if((object_position_y < BALL_IN_FRONT)){
+    // In case the ball moves out of the pos error range then rotate a little bit
+    double angv = 0;
+    if(abs(object_position_x - FRAME_WIDTH / 2) > POSITION_ERROR){
+      angv += SPIN_SEARCH_SPEED / 1.4;
+      if(object_position_x > FRAME_WIDTH / 2){
+        angv *= -1;
+      }
+    }
+    
+    std::string command = wheel::move(MOVING_SPEED, 90, angv);
     serial_write(command);
+
     return false;
   }
 
@@ -151,18 +168,51 @@ bool StateMachine::goto_ball(){
 
 bool StateMachine::search_for_basket(){
   // The basket and the ball are not in the center of the frame
-  if(object_position_x < -POSITION_ERROR || object_position_x > POSITION_ERROR){
-    std::string command = wheel::orbit(ORBIT_SPEED, BALL_IN_FRONT /* TODO: Replace with distance from ball instead */);
-    serial_write(command);
-    return false;
+  std::string command;
+  bool ret = false;
+  std::cout << basket_state << std::endl;
+
+  if(basket_state == ORBIT_BALL){
+    if(abs(basket_position_x - FRAME_WIDTH / 2) < POSITION_ERROR * 5 ) {
+      // command = wheel::stop();
+      // ret = true;
+      // basket_state = ORBIT_BALL;
+      basket_state = CENTER_BASKET;
+    }
+
+
+    command = wheel::move(ORBIT_SPEED, 180, -(object_position_x - FRAME_WIDTH / 2) * 0.03);
+
+  }else if(basket_state == CENTER_BASKET){
+    if(abs(basket_position_x - FRAME_WIDTH / 2) < POSITION_ERROR) basket_state = ORBIT_BASKET;
+
+    double angv = SPIN_CENTER_SPEED * 1.4;
+    if(basket_position_x > FRAME_WIDTH / 2){
+      angv *= -1;
+    }
+
+    command = wheel::move(0, 0, angv);
+
+  }else if(basket_state == ORBIT_BASKET){
+    int16_t sign = 1;
+    if(basket_position_x > FRAME_WIDTH / 2){
+      sign *= -1;
+    }
+
+    int16_t dir = 0;
+    if((object_position_x - FRAME_WIDTH / 2) < 0) dir = 180;
+
+    command = wheel::move(ORBIT_SPEED * 0.7, dir, -(basket_position_x - FRAME_WIDTH / 2) * 0.02);
+
+    if(abs(object_position_x - FRAME_WIDTH / 2) < POSITION_ERROR){
+      command = wheel::stop();
+      ret = true;
+      basket_state = ORBIT_BALL;
+    }
   }
 
-  // The basket and the ball are in the center of the frame
-  else{
-    std::string command = wheel::stop();
-    serial_write(command);
-    return true;
-  }
+  serial_write(command);
+  return ret;
 }
 
 bool StateMachine::throw_the_ball(){
@@ -173,7 +223,7 @@ bool StateMachine::throw_the_ball(){
     serial_write(command);
 
     // Wheel control
-    command = wheel::move(MOVING_SPEED, 0);
+    command = wheel::move(MOVING_SPEED_THROW, 90, 0);
     serial_write(command);
     return false;
   }
@@ -190,13 +240,27 @@ bool StateMachine::throw_the_ball(){
   }
 }
 
+
+state_t StateMachine::get_state(){
+  return state;
+}
+
 void StateMachine::update_ball_position(int16_t x, int16_t y, uint16_t width, uint16_t height){
-  object_position_x = -width / 2 + x;
-  object_position_y = height / y;
+  object_position_x = x;
+  object_position_y = y;
+}
+
+void StateMachine::update_basket_position(int16_t x, int16_t y, uint16_t width, uint16_t height){
+  basket_position_x = x + width/2;
+  basket_position_y = y;
 }
 
 void StateMachine::set_object_in_sight(bool in_sight){
   object_in_sight = in_sight;
+}
+
+void StateMachine::set_basket_in_sight(bool in_sight){
+  basket_in_sight = in_sight;
 }
 
 void StateMachine::reset_machine(){

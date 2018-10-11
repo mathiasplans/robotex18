@@ -6,7 +6,7 @@
 #include <image_transport/image_transport.h>
 #include "vision/Break.h"
 
-#define fake_camera
+// #define fake_camera
 // #define vid_out
 
 using namespace std;
@@ -30,8 +30,8 @@ int main(int argc, char **argv){
     ROS_INFO("Started");
 
     #ifdef fake_camera
+    // VideoCapture cap("/home/robot/vids/basket_blue.mp4");
     VideoCapture cap("/home/robot/vids/basket_blue.mp4");
-    // VideoCapture cap("/home/robot/vids/test1.mp4");
     #else
     VideoCapture cap(2);
     #endif

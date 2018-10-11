@@ -16,6 +16,12 @@ typedef enum{
   CORRECT_POSITION  ///< If the basket is in the middle of the frame and the ball isn't, correct the positon
 }state_t;
 
+typedef enum{
+  ORBIT_BALL,
+  CENTER_BASKET,
+  ORBIT_BASKET
+}basket_state_t;
+
 /**
  * The class for the main State Machine of the robot
  */
@@ -25,10 +31,14 @@ private:
   bool stop_signal = false;    ///< If set, the robot will be set to and can not exit the IDLE state
   bool reset_signal = false;   ///< If set, the robot will be set to the IDLE state
 
-  /* Position variables */
-  float object_position_x;     ///< X coordinates of the object
-  float object_position_y;     ///< Y coordinates of the object
-  bool object_in_sight;        ///< True if any objects are in sight
+  /* Internal variables for calculatng the position of the robot, basket, or balls */
+  float object_position_x;  ///< X coordinates of the object
+  float object_position_y;  ///< Y coordinates of the object
+  float basket_position_x;  ///< X coordinates of the basket
+  float basket_position_y;  ///< Y coordinates of the basket
+  bool object_in_sight;     ///< True if any objects are in sight
+  bool basket_in_sight;
+  bool basket_found = false;
 
   /* Serial Communication */
   int serial;                  ///< Handle of the serial port
@@ -39,6 +49,8 @@ private:
   /* ROS variables */
   ros::Publisher publisher;    ///< Publisher object for serial node
   ros::Rate command_delay;     ///< Delay between sending the commands
+
+  basket_state_t basket_state = ORBIT_BALL;
 
   /* Misc variables */
   bool searching_ball = true;  ///< True if robot requires information about ball position
@@ -128,10 +140,21 @@ public:
     uint16_t height  ///< [in] Height of the camera's frame
   );
 
+  void update_basket_position(
+    int16_t x,       ///< [in] X coordinates of the object
+    int16_t y,       ///< [in] Y coordinates of the object
+    uint16_t width,  ///< [in] Width of the camera's frame
+    uint16_t height  ///< [in] Height of the camera's frame
+  );
+
   /**
    * Lets the State Machine know if any objects are in sight (Balls, baskets, etc.)
    */
   void set_object_in_sight(
+    bool in_sight  ///< [in] True if something is in sight
+  );
+
+  void set_basket_in_sight(
     bool in_sight  ///< [in] True if something is in sight
   );
 

@@ -8,6 +8,7 @@
 #include "vision/Ball.h"
 #include "vision/Threshold.h"
 #include "vision/Output_type.h"
+#include "core/Bob.h"
 #include <boost/bind.hpp>
 #include <cmath>
 
@@ -22,6 +23,8 @@ int lastx = 0;
 int lasty = 0;
 output_t type = DEF;
 bool display_contours = false;
+bool requested = true;
+int frameCount = 0;
 
 double polsby_doppler(std::vector<cv::Point>& contour){
     double length = arcLength(contour, true);
@@ -31,6 +34,8 @@ double polsby_doppler(std::vector<cv::Point>& contour){
 }
 
 void detection_callback(const sensor_msgs::ImageConstPtr& ros_frame, image_transport::Publisher& pub, ros::Publisher& ballPub){
+    frameCount++;
+    if(!requested) return;
     //Convert ros image back to cv::Mat
     cv_bridge::CvImagePtr ptr;
     ptr = cv_bridge::toCvCopy(ros_frame, "bgr8");
@@ -47,7 +52,7 @@ void detection_callback(const sensor_msgs::ImageConstPtr& ros_frame, image_trans
     inRange(frame, lower, upper, mask);
     
     // erode(mask, mask, element, Point(-1, -1),2);
-    dilate(mask, mask, element, Point(-1, -1),2);
+    // dilate(mask, mask, element, Point(-1, -1),2);
 
     std::vector<std::vector<cv::Point> > contours;
     findContours(mask, contours, CV_RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
@@ -68,32 +73,47 @@ void detection_callback(const sensor_msgs::ImageConstPtr& ros_frame, image_trans
     int foundCount = 0;
     
     for( int i = 0; i< contours.size(); i++ ){
-        if(radius[i] < 3 || radius[i] > 30 || center[i].y < 100) continue;
-        if(polsby_doppler(contours[i]) < 0.75) continue;
+        if(radius[i] < 3 ) continue;//|| radius[i] > 55 || center[i].y < 100) continue;
+        if(polsby_doppler(contours[i]) < 0.7) continue;
         foundCount++;
         if(radius[i] > largestRadius){
             largestIndex = i;
             largestRadius = radius[i];
         }
-        // if(display_contours) drawContours(frame, contours_poly, i, Scalar(0, 0, 255), 2, 8, vector<Vec4i>(), 0, Point() );
+        if(display_contours) drawContours(frame, contours_poly, i, Scalar(0, 0, 255), 2, 8, vector<Vec4i>(), 0, Point() );
         
     }
 
-    if(largestIndex >= 0){
-        vision::Ball ball;
+    vision::Ball ball;
+    
+    if(largestIndex >= 0 && frameCount > 15){
         
-        ball.ballX = center[largestIndex].x;
-        ball.ballY = center[largestIndex].y;
-        ball.width = 480;
-        // ball.height = height;
-        if(abs(ball.ballX - lastx) < 30 && abs(ball.ballY - lasty) < 30){
-            // ROS_INFO("Found %d balls", foundCount);
-            ballPub.publish(ball);
+        
+        if(abs(center[largestIndex].x - lastx) < 30 && abs(center[largestIndex].y - lasty) < 30){
+            // ROS_INFO("Found %d balls", largestIndex);
+            
+            ball.ballX = center[largestIndex].x;
+            ball.ballY = center[largestIndex].y;
+            ball.width = 480;
+            ball.height = 640;
+        }else{
+            ball.ballX = -1;
+            ball.ballY = -1;
+            ball.width = -1;
+            ball.height = -1;
         }
 
         lastx = center[largestIndex].x;
         lasty = center[largestIndex].y;
+    }else{
+        ball.ballX = -1;
+        ball.ballY = -1;
+        ball.width = -1;
+        ball.height = -1;
     }
+
+    // requested = false;
+    ballPub.publish(ball);
 
     Mat out;
 
@@ -127,7 +147,14 @@ void threshold_callback(const vision::Threshold::ConstPtr& t){
     ofstream ths("/home/robot/catkin_ws/src/vision/ths.txt");
     ths << t->hh << endl << t->sh << endl << t->vh << endl;
     ths << t->hl << endl << t->sl << endl << t->vl << endl;
+    // cout << "hi\n";
     ths.close();
+}
+
+void bob_callback(const core::Bob::ConstPtr& t){
+    if(t->ball){
+        requested = true;
+    }
 }
 
 void output_callback(const vision::Output_type::ConstPtr& o){
@@ -157,7 +184,7 @@ int main(int argc, char **argv){
     ros::Subscriber sub = n.subscribe<sensor_msgs::Image>("camera/stream", 1, boost::bind(detection_callback, _1, pub, ballPub));
     ros::Subscriber tsub = n.subscribe<vision::Threshold>("thresholds/ball", 1, threshold_callback);
     ros::Subscriber osub = n.subscribe<vision::Output_type>("output_type", 1, output_callback);
-    
+    ros::Subscriber csub = n.subscribe<core::Bob>("bob", 10, bob_callback);
     
 
     ros::spin();
