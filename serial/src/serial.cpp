@@ -99,13 +99,13 @@ void command_handler(const core::Command::ConstPtr& msg){
 int serial_port;
 
 void write_cmd(std::string cmd) {
-  auto write_string = cmd + "\n";
+  std::string write_string = cmd + "\n";
   write(serial_port, write_string.c_str(), write_string.size());
 }
 
 // removes the message tags in the front and back
 std::string remove_tags(std::string str) {
-  auto last = str.find('>');
+  size_t last = str.find('>');
 
   if (str[0] == '<' && last != std::string::npos ) {
     return str.substr(1, last-1);
@@ -115,7 +115,7 @@ std::string remove_tags(std::string str) {
 
 // Mimicking pythons split function
 std::vector<std::string> split(std::string str, std::string sep = " ") {
-  auto result = std::vector<std::string>();
+  std::vector<std::string> result;
 
   size_t start = 0;
   size_t end   = str.find(sep);
@@ -167,7 +167,7 @@ int main(int argc, char **argv){
   // Subscribe to commands topic
   ros::Subscriber commands_topic_in = n.subscribe<core::Command>("commands", 1000, command_handler);
 
-  auto index = 0;
+  ssize_t index = 0;
   char read_buf[32];
 
   while(ros::ok()){
@@ -199,14 +199,14 @@ int main(int argc, char **argv){
         message_buffer.append(read_buf, index);
         
         // need to read more. no complete message
-        auto message_end = message_buffer.find('\n');
+        size_t message_end = message_buffer.find('\n');
         if (message_end == std::string::npos) {
           ros::spinOnce();
           continue;
         }
 
         // extract one message from the buffer
-        auto message_tagged = message_buffer.substr(0, message_end);
+        std::string message_tagged = message_buffer.substr(0, message_end);
         message_buffer = message_buffer.substr(message_end+1);
 
         if (message_tagged == "") {
@@ -216,7 +216,7 @@ int main(int argc, char **argv){
 
         std::cout << "Message from serial port: " << message_tagged << std::endl;
 
-        auto message = remove_tags(message_tagged);
+        std::string message = remove_tags(message_tagged);
         if (message == "") {
           
         }    
@@ -246,7 +246,7 @@ int main(int argc, char **argv){
         else if (message.find("gs") != std::string::npos) {
           serial::WheelSpeed speeds;
 
-          const auto split_message = split(message, ":");
+          const std::vector<std::string> split_message = split(message, ":");
           
           // split_message should be for example [gs, 5, 100, -20]
           speeds.wheel1 = stoi(split_message[1]);
