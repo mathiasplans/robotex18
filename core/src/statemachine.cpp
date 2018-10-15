@@ -20,10 +20,13 @@ void StateMachine::state_machine(void){
   // If stop signale is set, then set to IDLE
   if(stop_signal || reset_signal){
     reset_signal = false;
+    serial_write(wheel::stop());
     state = IDLE;
-    std::cout << "hi\n";
+    command_delay.sleep();
     return;
   }
+
+  // std::cout << state << std::endl;
 
   /* State Handling */
   switch (state) {
@@ -84,11 +87,11 @@ void StateMachine::set_stop_signal(bool ref_signal){
 }
 
 StateMachine::StateMachine(ros::Publisher& topic) : publisher(topic), command_delay(COMMAND_RATE) {
-
+  std::cout << "A StateMachine object was created with publisher" << std::endl;
 }
 
 StateMachine::StateMachine() : command_delay(COMMAND_RATE) {
-
+  std::cout << "A StateMachine object was created without publisher" << std::endl;
 }
 
 /**
@@ -100,18 +103,18 @@ template <typename T> int sgn(T val) {
 }
 
 bool StateMachine::search_for_ball(){
+  // std::cout << "Search for ball: "  << object_in_sight << std::endl;
   // If the robot hasn't found a ball yet
   if(!object_in_sight){
     std::string command = wheel::move(0, 0, SPIN_SEARCH_SPEED);
-    // NOTE: Testing
-    //std::string command = std::string("sd:5:1:1\r\n");
     serial_write(command);
+    // std::cout << "hi\n";
     return false;
   }
 
   // If then robot has found a ball, center in on it
   else{
-    object_in_sight = false;
+    // object_in_sight = false;
     std::string command = wheel::stop();
     serial_write(command);
     return true;
@@ -245,6 +248,7 @@ state_t StateMachine::get_state(){
   return state;
 }
 
+
 void StateMachine::update_ball_position(int16_t x, int16_t y, uint16_t width, uint16_t height){
   object_position_x = x;
   object_position_y = y;
@@ -257,6 +261,8 @@ void StateMachine::update_basket_position(int16_t x, int16_t y, uint16_t width, 
 
 void StateMachine::set_object_in_sight(bool in_sight){
   object_in_sight = in_sight;
+  // std::cout << "Function called\n";
+  // std::cout << "Obj in sight: " << object_in_sight << std::endl;
 }
 
 void StateMachine::set_basket_in_sight(bool in_sight){

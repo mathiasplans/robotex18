@@ -35,7 +35,7 @@ double polsby_doppler(std::vector<cv::Point>& contour){
 
 void detection_callback(const sensor_msgs::ImageConstPtr& ros_frame, image_transport::Publisher& pub, ros::Publisher& ballPub){
     frameCount++;
-    if(!requested) return;
+
     //Convert ros image back to cv::Mat
     cv_bridge::CvImagePtr ptr;
     ptr = cv_bridge::toCvCopy(ros_frame, "bgr8");

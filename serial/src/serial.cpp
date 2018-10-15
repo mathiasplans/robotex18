@@ -27,19 +27,21 @@
 #define PING  std::string("PING-----")
 #define ACK   std::string("ACK------")
 
-#define ALL_SIGNAL(field)            std::string("ref:a") + std::string(field) + std::string("X")
-#define SIGNAL(field, robot_letter)  std::string("ref:a") + std::string(field) +  std::string(robot_letter)
+#define ALL_SIGNAL(field)            std::string("a") + std::string(field) + std::string("X")
+#define SIGNAL(field, robot_letter)  std::string("a") + std::string(field) +  std::string(robot_letter)
 
+#define RECEIVE_TAG  std::string("ref:")
+#define SEND_TAG     std::string("rf:")
 
-#define START_SIGNAL_ALL(field)            (ALL_SIGNAL(field)           + START)
-#define START_SIGNAL(field, robot_letter) ( SIGNAL(field, robot_letter) + START)
+#define START_SIGNAL_ALL(field)            (RECEIVE_TAG + ALL_SIGNAL(field)           + START)
+#define START_SIGNAL(field, robot_letter)  (RECEIVE_TAG + SIGNAL(field, robot_letter) + START)
 
-#define STOP_SIGNAL_ALL(field)           ( ALL_SIGNAL(field)           + STOP)
-#define STOP_SIGNAL(field, robot_letter) ( SIGNAL(field, robot_letter) + STOP)
+#define STOP_SIGNAL_ALL(field)             (RECEIVE_TAG + ALL_SIGNAL(field)           + STOP)
+#define STOP_SIGNAL(field, robot_letter)   (RECEIVE_TAG + SIGNAL(field, robot_letter) + STOP)
 
-#define PING_SIGNAL(field, robot_letter)  (SIGNAL(field, robot_letter) + PING)
+#define PING_SIGNAL(field, robot_letter)   (RECEIVE_TAG + SIGNAL(field, robot_letter) + PING)
 
-#define ACK_SIGNAL(field, robot_letter)    (SIGNAL(field, robot_letter) + ACK)
+#define ACK_SIGNAL(field, robot_letter)    (SEND_TAG    + SIGNAL(field, robot_letter) + ACK)
 
 
 void serial_init(int* serial){
@@ -99,7 +101,7 @@ void command_handler(const core::Command::ConstPtr& msg){
 int serial_port;
 
 void write_cmd(std::string cmd) {
-  std::string write_string = cmd + "\n";
+  std::string write_string = cmd + "\r\n";
   write(serial_port, write_string.c_str(), write_string.size());
 }
 
@@ -111,6 +113,10 @@ std::string remove_tags(std::string str) {
     return str.substr(1, last-1);
   }
   return "";
+}
+
+std::string add_tags(std::string str){
+  return std::string("<") + str + std::string(">");
 }
 
 // Mimicking pythons split function
@@ -170,13 +176,16 @@ int main(int argc, char **argv){
   ssize_t index = 0;
   char read_buf[32];
 
+  // Set rate for updates
+  ros::Rate r(100);
+
   while(ros::ok()){
     // what happens when we have something to read while at the same time, needing to write?
     // possible fix: write after reading.
     
     // There is something to write
     if(command_in_buffer){
-      write(serial_port, command.c_str(), command.size());
+      write_cmd(command);
       command_in_buffer = false;
     }
 
@@ -195,7 +204,6 @@ int main(int argc, char **argv){
       // Successful read
       else {
         
-
         message_buffer.append(read_buf, index);
         
         // need to read more. no complete message
@@ -214,13 +222,10 @@ int main(int argc, char **argv){
           continue;
         }
 
-        std::cout << "Message from serial port: " << message_tagged << std::endl;
-
         std::string message = remove_tags(message_tagged);
         if (message == "") {
           
         }    
-
 
         /* Check if received message was referee signal */
         if(message.find("ref") != std::string::npos) {
@@ -230,16 +235,29 @@ int main(int argc, char **argv){
           // Robot received start signal
           if(message == (START_SIGNAL(DB_FIELD, DB_ROBOT_NO))) {
             msg.start = true;
+            write_cmd(ACK_SIGNAL(DB_FIELD, DB_ROBOT_NO));
+            referee_topic_out.publish(msg);
           }
           // Robot received stop signal
           else if(message == (STOP_SIGNAL(DB_FIELD, DB_ROBOT_NO))) {
             msg.start = false;
+            write_cmd(ACK_SIGNAL(DB_FIELD, DB_ROBOT_NO));
+            referee_topic_out.publish(msg);
           }
           // Robot received ping signal, send ACK
           else if(message == (PING_SIGNAL(DB_FIELD, DB_ROBOT_NO))) {
-            write(serial_port, ACK_SIGNAL(DB_FIELD, DB_ROBOT_NO).c_str(), ACK_SIGNAL(DB_FIELD, DB_ROBOT_NO).size());
+            write_cmd(ACK_SIGNAL(DB_FIELD, DB_ROBOT_NO));
           }
-          referee_topic_out.publish(msg);
+          //
+          else if(message == (STOP_SIGNAL_ALL(DB_FIELD))){
+            msg.start = false;
+            referee_topic_out.publish(msg);
+          }
+          //
+          else if(message == (START_SIGNAL_ALL(DB_FIELD))){
+            msg.start = true;
+            referee_topic_out.publish(msg);
+          }
         }
         
         // Robot received wheel rotation
@@ -272,7 +290,6 @@ int main(int argc, char **argv){
 
     // For callbacks
     ros::spinOnce();
-
   }
 
   return 0;

@@ -36,7 +36,7 @@ private:
   float object_position_y;  ///< Y coordinates of the object
   float basket_position_x;  ///< X coordinates of the basket
   float basket_position_y;  ///< Y coordinates of the basket
-  bool object_in_sight;     ///< True if any objects are in sight
+  bool object_in_sight = false;     ///< True if any objects are in sight
   bool basket_in_sight;
   bool basket_found = false;
 
