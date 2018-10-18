@@ -18,7 +18,7 @@
 void StateMachine::state_machine(void){
   /* Main Loop */
   // If stop signale is set, then set to IDLE
-  if(stop_signal || reset_signal){
+  if(stop_signal /*|| reset_signal*/){
     reset_signal = false;
     serial_write(wheel::stop());
     state = IDLE;

@@ -222,6 +222,8 @@ int main(int argc, char **argv){
           continue;
         }
 
+        std::cout << message_tagged << std::endl;
+
         std::string message = remove_tags(message_tagged);
         if (message == "") {
           
