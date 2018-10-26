@@ -57,9 +57,10 @@
 #define COMMAND_DELAY         1000000 / COMMAND_RATE
 
 /**
- * Speed of the thrower
+ * Speed of the thrower and aimer's position
  */
 #define THROWER_SPEED         1500
+#define AIM_POWER             0
 
 /**
  * The distance from wheel to robot center, in cm

@@ -1,6 +1,7 @@
 #include "defines.hpp"
 #include "statemachine.hpp"
 #include "wheelcontrol.hpp"
+#include "lookup_table.hpp"
 
 #include <cstdio>
 #include <cerrno>
@@ -26,13 +27,20 @@ void StateMachine::state_machine(void){
     return;
   }
 
+  // If pause signal is set, do nothing
+  if(pause_signal){
+    serial_write(wheel::stop());
+    command_delay.sleep();
+    return;
+  }
+
   // std::cout << state << std::endl;
 
   /* State Handling */
   switch (state) {
     case IDLE:
       // Start searching for the ball
-      state = SEARCH_BALL;
+      state = THROW;
 
       break;
     case SEARCH_BALL:
@@ -86,12 +94,19 @@ void StateMachine::set_stop_signal(bool ref_signal){
   stop_signal = ref_signal;
 }
 
+void StateMachine::reset_substates(){
+  substate[THROW]         = THROW_AIM;
+  substate[SEARCH_BASKET] = BASKET_ORBIT_BALL;
+}
+
 StateMachine::StateMachine(ros::Publisher& topic) : publisher(topic), command_delay(COMMAND_RATE) {
   std::cout << "A StateMachine object was created with publisher" << std::endl;
+  reset_substates();
 }
 
 StateMachine::StateMachine() : command_delay(COMMAND_RATE) {
   std::cout << "A StateMachine object was created without publisher" << std::endl;
+  reset_substates();
 }
 
 /**
@@ -173,21 +188,21 @@ bool StateMachine::search_for_basket(){
   // The basket and the ball are not in the center of the frame
   std::string command;
   bool ret = false;
-  std::cout << basket_state << std::endl;
-
-  if(basket_state == ORBIT_BALL){
+  
+  if(substate[SEARCH_BASKET] == BASKET_ORBIT_BALL){
     if(abs(basket_position_x - FRAME_WIDTH / 2) < POSITION_ERROR * 5 ) {
       // command = wheel::stop();
       // ret = true;
       // basket_state = ORBIT_BALL;
-      basket_state = CENTER_BASKET;
+      substate[SEARCH_BASKET] = BASKET_CENTER_BASKET;
     }
 
 
     command = wheel::move(ORBIT_SPEED, 180, -(object_position_x - FRAME_WIDTH / 2) * 0.03);
 
-  }else if(basket_state == CENTER_BASKET){
-    if(abs(basket_position_x - FRAME_WIDTH / 2) < POSITION_ERROR) basket_state = ORBIT_BASKET;
+  }else if(substate[SEARCH_BASKET] == BASKET_CENTER_BASKET){
+    if(abs(basket_position_x - FRAME_WIDTH / 2) < POSITION_ERROR)
+      substate[SEARCH_BASKET] = BASKET_ORBIT_BASKET;
 
     double angv = SPIN_CENTER_SPEED * 1.4;
     if(basket_position_x > FRAME_WIDTH / 2){
@@ -196,7 +211,7 @@ bool StateMachine::search_for_basket(){
 
     command = wheel::move(0, 0, angv);
 
-  }else if(basket_state == ORBIT_BASKET){
+  }else if(substate[SEARCH_BASKET] == BASKET_ORBIT_BASKET){
     int16_t sign = 1;
     if(basket_position_x > FRAME_WIDTH / 2){
       sign *= -1;
@@ -210,7 +225,7 @@ bool StateMachine::search_for_basket(){
     if(abs(object_position_x - FRAME_WIDTH / 2) < POSITION_ERROR){
       command = wheel::stop();
       ret = true;
-      basket_state = ORBIT_BALL;
+      substate[SEARCH_BASKET] = BASKET_ORBIT_BALL;
     }
   }
 
@@ -220,7 +235,17 @@ bool StateMachine::search_for_basket(){
 
 bool StateMachine::throw_the_ball(){
   // The ball is not thrown yet but we are getting close!
-  if(true /* Placeholder */){
+  if(substate[THROW] == THROW_AIM){
+    std::string command = wheel::aim(AIM_POWER);
+    serial_write(command);
+
+    command = wheel::thrower(THROWER_SPEED);
+    serial_write(command);
+
+    substate[THROW] = THROW_GOAL;
+    return false;
+  }else if(substate[THROW] == THROW_GOAL){
+  
     // Thrower motor control
     std::string command = wheel::thrower(THROWER_SPEED);
     serial_write(command);
@@ -228,24 +253,52 @@ bool StateMachine::throw_the_ball(){
     // Wheel control
     command = wheel::move(MOVING_SPEED_THROW, 90, 0);
     serial_write(command);
-    return false;
-  }
+    
+    if(!ball_in_sight){
+      // Start a timer
+      substate[THROW] = THROW_GOAL_NO_BALL;
+    }
 
-  // The ball has been thrown
-  else{
-    // Thrower motor control
-    std::string command = wheel::thrower_stop();
+    return false;
+  }else if(substate[THROW] == THROW_GOAL_NO_BALL){
+    std::string command = wheel::thrower(THROWER_SPEED);
     serial_write(command);
 
-    // Wheel control
+    command = wheel::move(MOVING_SPEED_THROW, 90, 0);
+    serial_write(command);
+
+    if(false /* NOTE: Placeholder, the timer status should be checked here */){
+        substate[THROW] = THROW_DEAIM;
+    }
+    
+    return false;
+  }else if(substate[THROW] == THROW_DEAIM){
+    std::string command = wheel::deaim();
+    serial_write(command);
+
     command = wheel::stop();
     serial_write(command);
+
+    substate[THROW] = THROW_AIM;
+    return true;
   }
 }
 
 
 state_t StateMachine::get_state(){
   return state;
+}
+
+substate_t StateMachine::get_substate(state_t superstate){
+  return substate[superstate];
+}
+
+void StateMachine::set_state(state_t superstate){
+  state = superstate;
+}
+
+void StateMachine::set_substate(state_t superstate, substate_t new_substate){
+  substate[superstate] = new_substate;
 }
 
 
@@ -279,6 +332,11 @@ void StateMachine::stop_machine(){
 
 void StateMachine::start_machine(){
   stop_signal = false;
+  pause_signal = false;
+}
+
+void StateMachine::pause_machine(){
+  pause_signal = true;
 }
 
 bool StateMachine::searching_for_ball(){

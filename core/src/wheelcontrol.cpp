@@ -53,6 +53,17 @@ std::string wheel::thrower_stop(){
   return std::string("d:0\r\n");
 }
 
+static uint16_t aim_position = 0;
+
+std::string wheel::aim(uint16_t aim_power){
+  aim_position += aim_power;
+  return std::string("st:") + std::to_string(aim_power) + std::string("\r\n");
+}
+
+std::string wheel::deaim(){
+  return std::string("st:-") + std::to_string(aim_position) + std::string("\r\n");
+}
+
 // std::string wheel::orbit(int16_t speed, uint16_t radius){
 //   uint16_t spinning_speed = WHEEL_R * speed / radius;
 //   return PACKET2(

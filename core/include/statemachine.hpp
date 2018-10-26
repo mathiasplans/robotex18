@@ -7,20 +7,34 @@
  * Enum of all the states in state machine
  */
 typedef enum{
-  IDLE,             ///< The robot is idle, it doesn't do anything but tries to start searching for ball
-  SEARCH_BALL,      ///< The robot is searching for balls
-  CENTER_ON_BALL,   ///< Once the robot has found a suitable ball, center on it so it is in the middle of the camera's frame
-  MOVE_TO_BALL,     ///< Once the ball is in the middle of the frame (Doesn't have to be if aproaching from an angle), move up to it
-  SEARCH_BASKET,    ///< If the ball is sufficently close, search for the basket while keeping the ball in front of the robot
-  THROW,            ///< Once the ball and the baslet are in the middle of the camera's frame, throw the ball to the basket
-  CORRECT_POSITION  ///< If the basket is in the middle of the frame and the ball isn't, correct the positon
+  IDLE,              ///< The robot is idle, it doesn't do anything but tries to start searching for ball
+  SEARCH_BALL,       ///< The robot is searching for balls
+  CENTER_ON_BALL,    ///< Once the robot has found a suitable ball, center on it so it is in the middle of the camera's frame
+  MOVE_TO_BALL,      ///< Once the ball is in the middle of the frame (Doesn't have to be if aproaching from an angle), move up to it
+  SEARCH_BASKET,     ///< If the ball is sufficently close, search for the basket while keeping the ball in front of the robot
+  THROW,             ///< Once the ball and the baslet are in the middle of the camera's frame, throw the ball to the basket
+  CORRECT_POSITION,  ///< If the basket is in the middle of the frame and the ball isn't, correct the positon
+  NUMBER_OF_STATES
 }state_t;
 
+/**
+ * Sub-states for states in state_t
+ */
 typedef enum{
-  ORBIT_BALL,
-  CENTER_BASKET,
-  ORBIT_BASKET
-}basket_state_t;
+  BASKET_ORBIT_BALL,     ///< The robot orbits the ball until the basket is in sight
+  BASKET_CENTER_BASKET,  ///< The robot adjusts it's position til the basket is in the middle of a frame
+  BASKET_ORBIT_BASKET,   ///< The robot orbits the basket until the ball is in the middle of the frame
+  THROW_AIM,             ///< Robot aims the thrower and get's the best throwing power
+  THROW_GOAL,            ///< Robot moves forward and throws the ball
+  THROW_GOAL_NO_BALL,    ///< Robot throws the ball even if ball is not in sight. Usually,
+                         ///< at the end of the throw, the ball is not in sight,
+                         ///< even if it's not throwh yet. To avoid not throwing the ball,
+                         ///< the robot has to continue throwing even if ball is not in sight.
+                         ///< After a brief time, the robot will exit this state
+                         ///< and return to searching the ball.
+  THROW_DEAIM            ///< Should the robot be finished with throwing,
+                         ///< it returns the thrower to it's default state
+}substate_t;
 
 /**
  * The class for the main State Machine of the robot
@@ -29,7 +43,8 @@ class StateMachine{
 private:
   /* Machine control */
   bool stop_signal = true;    ///< If set, the robot will be set to and can not exit the IDLE state
-  bool reset_signal = false;   ///< If set, the robot will be set to the IDLE state
+  bool reset_signal = false;  ///< If set, the robot will be set to the IDLE state
+  bool pause_signal = false;  ///< If set, the robot will be paused, state and substate won't be affected
 
   /* Internal variables for calculatng the position of the robot, basket, or balls */
   float object_position_x;  ///< X coordinates of the object
@@ -39,18 +54,18 @@ private:
   bool object_in_sight = false;     ///< True if any objects are in sight
   bool basket_in_sight;
   bool basket_found = false;
-
+  bool ball_in_sight = false;
+  
   /* Serial Communication */
   int serial;                  ///< Handle of the serial port
 
   /* State variables */
   state_t state = IDLE;        ///< The internal state of the state machine. For details, refer to state_t
-
+  substate_t substate[NUMBER_OF_STATES];
+  
   /* ROS variables */
   ros::Publisher publisher;    ///< Publisher object for serial node
   ros::Rate command_delay;     ///< Delay between sending the commands
-
-  basket_state_t basket_state = ORBIT_BALL;
 
   /* Misc variables */
   bool searching_ball = true;  ///< True if robot requires information about ball position
@@ -116,6 +131,33 @@ public:
   state_t get_state();
 
   /**
+   * Get the sub-state of the state of the State Machine
+   */
+  substate_t get_substate(
+    state_t superstate  ///< [in] Superstate whom substate is called upon    
+  );
+
+  /**
+   * Change the state of the State Machine
+   */
+  void set_state(
+    state_t superstate  ///< [in] State will be set to this    
+  );
+
+  /**
+   * Change the sub-state of a state of the State Machine
+   */
+  void set_substate(
+    state_t superstate,      ///< [in] Superstate whom substate will be set
+    substate_t new_substate  ///< [in] Sub-state will be set to this
+  );
+
+  /**
+   * Resets all substates to default
+   */
+  void reset_substates();
+
+  /**
    * Reset the State Machine (Restarts from IDLE state)
    */
   void reset_machine();
@@ -129,6 +171,13 @@ public:
    * Starts the machine (Can proceed from IDLE state)
    */
   void start_machine();
+
+  /**
+   * Pauses the operations of the State Machine
+   * When start is called, the robot continues where
+   * it left off when paused
+   */
+  void pause_machine();
 
   /**
    * Update the position of the sought out object

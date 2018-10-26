@@ -74,4 +74,16 @@ namespace wheel{
   //   uint16_t radius  ///< [in] Distance from the object that is orbited. In cm.
   // );
 
+  /**
+   * This function returns a command for aiming down sight
+   */
+  std::string aim(
+    uint16_t aim_power
+  );
+
+  /**
+   * This function resets the aim motor to it's default state
+   */
+  std::string deaim();
+
 }; /* namespace wheel */
