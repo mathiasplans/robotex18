@@ -1,3 +1,4 @@
+#pragma once
 #include <cstdint>
 
 /**
@@ -13,7 +14,7 @@ typedef struct{
 /**
  *
  */
-throw_parameters_t lookup_table[] = {
+const throw_parameters_t lookup_table[] = {
   // An example
   /* aim, thrower */
   THROW_TYPE(20, 1001),

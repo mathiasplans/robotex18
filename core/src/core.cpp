@@ -118,7 +118,7 @@ void handle_debug_command(StateMachine& sm){
     else if(input_command == "get state") std::cout << "The State Machine is in " << std::to_string(sm.get_state()) << " state" << std::endl;
     else if(std::regex_search(input_command, std::regex("set thrower \\d+"))){
       std::string thrower_string = split(input_command)[2];
-      sm.set_throw_power(std::stoi(thrower_power));
+      sm.set_throw_power(std::stoi(thrower_string));
       std::cout << "Set the thrower to: " << thrower_string << std::endl;
     }
     else if(std::regex_search(input_command, std::regex("set aimer \\d+"))){

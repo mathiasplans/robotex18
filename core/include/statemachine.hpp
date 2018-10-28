@@ -3,6 +3,8 @@
 
 #include <string>
 
+#include "lookup_table.hpp"
+
 /**
  * Enum of all the states in state machine
  */
@@ -201,7 +203,7 @@ public:
    * Set the variables before the throwing commences
    */
   void configure_thrower(
-    throw_parameters_t throw_parameters  ///< Struct which contains the aimer arc and thrower power (.aim and .thrower)
+    throw_parameters_t& throw_parameters  ///< Struct which contains the aimer arc and thrower power (.aim and .thrower)
   );
 
   /**
