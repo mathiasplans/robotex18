@@ -55,14 +55,18 @@ private:
   bool basket_in_sight;
   bool basket_found = false;
   bool ball_in_sight = false;
-  
+
+  /* Aiming variables */
+  uint16_t aimer_position;  ///< The position of the aimer, determines the arc of the throw
+  uint16_t thrower_power;   ///< How strongly does the motor on the thrower work. Ranges from 1001 to 2000
+
   /* Serial Communication */
   int serial;                  ///< Handle of the serial port
 
   /* State variables */
   state_t state = IDLE;        ///< The internal state of the state machine. For details, refer to state_t
   substate_t substate[NUMBER_OF_STATES];
-  
+
   /* ROS variables */
   ros::Publisher publisher;    ///< Publisher object for serial node
   ros::Rate command_delay;     ///< Delay between sending the commands
@@ -134,14 +138,14 @@ public:
    * Get the sub-state of the state of the State Machine
    */
   substate_t get_substate(
-    state_t superstate  ///< [in] Superstate whom substate is called upon    
+    state_t superstate  ///< [in] Superstate whom substate is called upon
   );
 
   /**
    * Change the state of the State Machine
    */
   void set_state(
-    state_t superstate  ///< [in] State will be set to this    
+    state_t superstate  ///< [in] State will be set to this
   );
 
   /**
@@ -178,6 +182,27 @@ public:
    * it left off when paused
    */
   void pause_machine();
+
+  /**
+   * Set the thrower power
+   */
+  void set_throw_power(
+    uint16_t throw_pwr  ///< Power of the thrower, ranges from 1001 to 2000
+  );
+
+  /**
+   * Set the aimer position
+   */
+  void set_aimer_position(
+    uint16_t aimer_pos  ///< Position of the aimer, ranges from 1000 to 1800
+  );
+
+  /**
+   * Set the variables before the throwing commences
+   */
+  void configure_thrower(
+    throw_parameters_t throw_parameters  ///< Struct which contains the aimer arc and thrower power (.aim and .thrower)
+  );
 
   /**
    * Update the position of the sought out object

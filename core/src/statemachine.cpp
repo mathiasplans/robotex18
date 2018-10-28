@@ -169,7 +169,7 @@ bool StateMachine::goto_ball(){
         angv *= -1;
       }
     }
-    
+
     std::string command = wheel::move(MOVING_SPEED, 90, angv);
     serial_write(command);
 
@@ -188,7 +188,7 @@ bool StateMachine::search_for_basket(){
   // The basket and the ball are not in the center of the frame
   std::string command;
   bool ret = false;
-  
+
   if(substate[SEARCH_BASKET] == BASKET_ORBIT_BALL){
     if(abs(basket_position_x - FRAME_WIDTH / 2) < POSITION_ERROR * 5 ) {
       // command = wheel::stop();
@@ -245,7 +245,7 @@ bool StateMachine::throw_the_ball(){
     substate[THROW] = THROW_GOAL;
     return false;
   }else if(substate[THROW] == THROW_GOAL){
-  
+
     // Thrower motor control
     std::string command = wheel::thrower(THROWER_SPEED);
     serial_write(command);
@@ -253,7 +253,7 @@ bool StateMachine::throw_the_ball(){
     // Wheel control
     command = wheel::move(MOVING_SPEED_THROW, 90, 0);
     serial_write(command);
-    
+
     if(!ball_in_sight){
       // Start a timer
       substate[THROW] = THROW_GOAL_NO_BALL;
@@ -270,7 +270,7 @@ bool StateMachine::throw_the_ball(){
     if(false /* NOTE: Placeholder, the timer status should be checked here */){
         substate[THROW] = THROW_DEAIM;
     }
-    
+
     return false;
   }else if(substate[THROW] == THROW_DEAIM){
     std::string command = wheel::deaim();
@@ -337,6 +337,19 @@ void StateMachine::start_machine(){
 
 void StateMachine::pause_machine(){
   pause_signal = true;
+}
+
+void StateMachine::set_throw_power(uint16_t throw_pwr){
+  thrower_power = throw_pwr;
+}
+
+void StateMachine::set_aimer_position(uint16_t aimer_pos){
+  aimer_position = aimer_pos;
+}
+
+void StateMachine::configure_thrower(throw_parameters_t& throw_parameters){
+  aimer_position = throw_parameters.aim;
+  thrower_power = throw_parameters.thrower;
 }
 
 bool StateMachine::searching_for_ball(){

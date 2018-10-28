@@ -1,7 +1,7 @@
 #include <cstdint>
 
 /**
- * 
+ *
  */
 typedef struct{
   uint16_t aim;
@@ -15,6 +15,7 @@ typedef struct{
  */
 throw_parameters_t lookup_table[] = {
   // An example
+  /* aim, thrower */
   THROW_TYPE(20, 1001),
   THROW_TYPE(19, 1010)
 };
