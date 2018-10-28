@@ -8,10 +8,13 @@ typedef struct{
   uint16_t thrower;
 }throw_parameters_t;
 
+#define THROW_TYPE(aim, power) (throw_parameters_t){aim, power}
+
 /**
  *
  */
 throw_parameters_t lookup_table[] = {
-  // This does not work due to it being non-trivial designator
-  [25] = (throw_parameters_t){20, 30}
+  // An example
+  THROW_TYPE(20, 1001),
+  THROW_TYPE(19, 1010)
 };
