@@ -25,7 +25,7 @@ void vision_callback(const vision::Ball::ConstPtr& msg, StateMachine& sm){
 
 void vision_callback2(const vision::Ball::ConstPtr& msg, StateMachine& sm){
   // ROS_INFO("I heard: [%d, %d]", msg->ballX, msg->ballY);
-  
+
   if(msg->ballX < 0) {
     // s.reset_machine();
   }else{
@@ -43,6 +43,69 @@ void referee_handler(const serial::Ref::ConstPtr& msg, StateMachine& sm){
     sm.start_machine();
   else
     sm.stop_machine();
+}
+
+/**
+ *
+ */
+void handle_debug_command(StateMachine& sm){
+  static std::string input_command;
+
+  // Handle the input commands
+  if(std::getline(std::cin, input_command)){
+    if(input_command == std::string("start")){
+      sm.start_machine();
+      std::cout << "The robot has been started" << std::endl;
+    }
+    else if(input_command == std::string("stop")){
+      sm.stop_machine();
+      std::cout << "The robot has been  stopped" << std::endl;
+    }
+    else if(input_command == std::string("reset")){
+      sm.reset_machine();
+      std::cout << "The robot has been reset" << std::endl;
+    }
+    else if(input_command == std::string("pause")){
+      sm.pause_machine();
+      std::cout << "The robot has been paused" << std::endl;
+    }
+    // Currently doesn't work
+    else if(std::regex_search(input_command, std::regex("set state [A-Z_]+"))){
+      std::string state_string = split(input_command)[2];
+
+      std::cout << "Switching to state: " << state_string << std::endl;
+      if(state_string == "IDLE") sm.set_state(IDLE);
+      else if(state_string == "SEARCH_BALL") sm.set_state(SEARCH_BALL);
+      else if(state_string == "CENTER_ON_BALL") sm.set_state(CENTER_ON_BALL);
+      else if(state_string == "MOVE_TO_BALL") sm.set_state(MOVE_TO_BALL);
+      else if(state_string == "SEARCH_BASKET") sm.set_state(SEARCH_BASKET);
+      else if(state_string == "THROW") sm.set_state(THROW);
+      else std::cout << "Entered state is invalid" << std::endl;
+    }
+    // Currently doesn't work
+    else if(std::regex_search(input_command, std::regex("set substate [A-Z_]+"))){
+      std::string substate_string = split(input_command)[2];
+
+      std::cout << "Swithcing to substate: " << substate_string << std::endl;
+      if(substate_string == "BASKET_ORBIT_BALL") sm.set_substate(SEARCH_BALL, BASKET_ORBIT_BALL);
+      else if(substate_string == "BASKET_CENTER_BASKET") sm.set_substate(SEARCH_BASKET, BASKET_CENTER_BASKET);
+      else if(substate_string == "BASKET_ORBIT_BASKET") sm.set_substate(SEARCH_BASKET, BASKET_ORBIT_BASKET);
+      else if(substate_string == "THROW_AIM") sm.set_substate(THROW, THROW_AIM);
+      else if(substate_string == "THROW_GOAL") sm.set_substate(THROW, THROW_GOAL);
+      else if(substate_string == "THROW_GOAL_NO_BALL") sm.set_substate(THROW, THROW_GOAL_NO_BALL);
+      else if(substate_string == "THROW_DEAIM") sm.set_substate(THROW, THROW_DEAIM);
+      else std::cout << "Entered substate is invalid" << std::endl;
+    }
+    else if(input_command == "reset substates"){
+      sm.reset_substates();
+      std::cout << "The substates have been set to their default value" << std::endl;
+    }
+    else if(input_command == "get state") std::cout << "The State Machine is in " << std::to_string(sm.get_state()) << " state" << std::endl;
+    else std::cout << "Entered command is invalid" << std::endl;
+
+    // Clear the string for the new commands to be read
+    input_command.clear();
+  }
 }
 
 // Mimicking pythons split function
@@ -89,64 +152,8 @@ int main(int argc, char **argv){
   // command.ball = s.searching_for_ball();
   // bob.publish(command);
 
-  std::string input_command;
-
   while(ros::ok()){
-    // Handle the input commands
-    if(std::getline(std::cin, input_command)){
-      if(input_command == std::string("start")){
-        sm.start_machine();
-        std::cout << "The robot has been started" << std::endl;
-      }
-      else if(input_command == std::string("stop")){
-        sm.stop_machine();
-        std::cout << "The robot has been  stopped" << std::endl;
-      }
-      else if(input_command == std::string("reset")){
-        sm.reset_machine();
-        std::cout << "The robot has been reset" << std::endl;
-      }
-      else if(input_command == std::string("pause")){
-        sm.pause_machine();
-        std::cout << "The robot has been paused" << std::endl;
-      }
-      // Currently doesn't work
-      else if(std::regex_search(input_command, std::regex("set state [A-Z_]+"))){
-        std::string state_string = split(input_command)[2];
-        
-        std::cout << "Switching to state: " << state_string << std::endl;
-        if(state_string == "IDLE") sm.set_state(IDLE);
-        else if(state_string == "SEARCH_BALL") sm.set_state(SEARCH_BALL);
-        else if(state_string == "CENTER_ON_BALL") sm.set_state(CENTER_ON_BALL);
-        else if(state_string == "MOVE_TO_BALL") sm.set_state(MOVE_TO_BALL);
-        else if(state_string == "SEARCH_BASKET") sm.set_state(SEARCH_BASKET);
-        else if(state_string == "THROW") sm.set_state(THROW);
-        else std::cout << "Entered state is invalid" << std::endl;
-      }
-      // Currently doesn't work
-      else if(std::regex_search(input_command, std::regex("set substate [A-Z_]+"))){
-        std::string substate_string = split(input_command)[2];
-        
-        std::cout << "Swithcing to substate: " << substate_string << std::endl;
-        if(substate_string == "BASKET_ORBIT_BALL") sm.set_substate(SEARCH_BALL, BASKET_ORBIT_BALL);
-        else if(substate_string == "BASKET_CENTER_BASKET") sm.set_substate(SEARCH_BASKET, BASKET_CENTER_BASKET);
-        else if(substate_string == "BASKET_ORBIT_BASKET") sm.set_substate(SEARCH_BASKET, BASKET_ORBIT_BASKET);
-        else if(substate_string == "THROW_AIM") sm.set_substate(THROW, THROW_AIM);
-        else if(substate_string == "THROW_GOAL") sm.set_substate(THROW, THROW_GOAL);
-        else if(substate_string == "THROW_GOAL_NO_BALL") sm.set_substate(THROW, THROW_GOAL_NO_BALL);
-        else if(substate_string == "THROW_DEAIM") sm.set_substate(THROW, THROW_DEAIM);
-        else std::cout << "Entered substate is invalid" << std::endl;
-      }
-      else if(input_command == "reset substates"){
-        sm.reset_substates();
-        std::cout << "The substates have been set to their default value" << std::endl;
-      }
-      else if(input_command == "get state") std::cout << "The State Machine is in " << std::to_string(sm.get_state()) << " state" << std::endl;
-      else std::cout << "Entered command is invalid" << std::endl;
-
-      // Clear the string for the new commands to be read
-      input_command.clear();
-    }
+    handle_debug_command(sm);
 
     // Run the State Machine once
     sm.state_machine();
