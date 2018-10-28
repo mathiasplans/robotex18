@@ -45,6 +45,21 @@ void referee_handler(const serial::Ref::ConstPtr& msg, StateMachine& sm){
     sm.stop_machine();
 }
 
+// Mimicking pythons split function
+std::vector<std::string> split(std::string str, std::string sep = " ") {
+  std::vector<std::string> result;
+
+  size_t start = 0;
+  size_t end   = str.find(sep);
+  while(end != std::string::npos) {
+    result.push_back(str.substr(start, end-start));
+    start = end + sep.length();
+    end = str.find(sep, start);
+  }
+  result.push_back(str.substr(start, end));
+  return result;
+}
+
 /**
  *
  */
@@ -106,21 +121,6 @@ void handle_debug_command(StateMachine& sm){
     // Clear the string for the new commands to be read
     input_command.clear();
   }
-}
-
-// Mimicking pythons split function
-std::vector<std::string> split(std::string str, std::string sep = " ") {
-  std::vector<std::string> result;
-
-  size_t start = 0;
-  size_t end   = str.find(sep);
-  while(end != std::string::npos) {
-    result.push_back(str.substr(start, end-start));
-    start = end + sep.length();
-    end = str.find(sep, start);
-  }
-  result.push_back(str.substr(start, end));
-  return result;
 }
 
 int main(int argc, char **argv){
