@@ -6,7 +6,7 @@
 
 /**
  * Command format:
- * 'sd:wheel1:wheel2:wheel3\r\n'
+ * 'sd:wheel1:wheel2:wheel3:wheel4\r\n'
  */
 #define PACKET1(sped, dir, ang) \
   std::string("sd:") + \
@@ -15,34 +15,31 @@
   SPEED_OF_WHEEL(WHEEL_2, sped, dir, ang) + \
   std::string(":") + \
   SPEED_OF_WHEEL(WHEEL_3, sped, dir, ang) + \
+  std::string(":") + \
+  SPEED_OF_WHEEL(WHEEL_$, sped, dir, ang) + \
   std::string("\r\n")
 
-#define PACKET2(sped1, sped2, sped3) \
+#define PACKET2(sped1, sped2, sped3, sped4) \
   std::string("sd:") + \
   std::to_string(sped1) + \
   std::string(":") + \
   std::to_string(sped2) + \
   std::string(":") + \
   std::to_string(sped3) + \
+  std::string(":") + \
+  std::to_string(sped4) + \
   std::string("\r\n")
 
 double wheel::speed_of_wheel(wheel_t wheel, double speed, double direction, double angular_velocity){
   return -MOVING_COEFFICIENT * (speed * cos((direction - wheel) * M_PI / 180) + angular_velocity * WHEEL_D);
 }
 
-// For moving and turning at the same time
-
 std::string wheel::move(double speed, double direction, double angular_velocity){
   return PACKET1(speed, direction, angular_velocity);
 }
 
-
-// std::string wheel::spin(int16_t ang_speed){
-//   return PACKET2(ang_speed, ang_speed, ang_speed);
-// }
-
 std::string wheel::stop(){
-  return PACKET2(0, 0, 0);
+  return PACKET2(0, 0, 0, 0);
 }
 
 std::string wheel::thrower(uint16_t speed){
@@ -63,12 +60,3 @@ std::string wheel::aim(uint16_t aim_power){
 std::string wheel::deaim(){
   return std::string("st:-") + std::to_string(aim_position) + std::string("\r\n");
 }
-
-// std::string wheel::orbit(int16_t speed, uint16_t radius){
-//   uint16_t spinning_speed = WHEEL_R * speed / radius;
-//   return PACKET2(
-//     (speed_of_wheel(WHEEL_1, speed, (M_PI / 2)) + spinning_speed),
-//     (speed_of_wheel(WHEEL_2, speed, (M_PI / 2)) + spinning_speed),
-//     (speed_of_wheel(WHEEL_3, speed, (M_PI / 2)) + spinning_speed)
-//   );
-// }
