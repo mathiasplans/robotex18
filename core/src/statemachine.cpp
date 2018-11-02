@@ -22,7 +22,9 @@ void StateMachine::state_machine(void){
   if(stop_signal /*|| reset_signal*/){
     reset_signal = false;
     serial_write(wheel::stop());
-    state = IDLE;
+    serial_write(wheel::thrower_stop());
+    state = THROW;
+    substate[THROW] = THROW_GOAL;
     command_delay.sleep();
     return;
   }
@@ -107,6 +109,15 @@ StateMachine::StateMachine(ros::Publisher& topic) : publisher(topic), command_de
 StateMachine::StateMachine() : command_delay(COMMAND_RATE) {
   std::cout << "A StateMachine object was created without publisher" << std::endl;
   reset_substates();
+}
+
+throw_parameters_t StateMachine::look_up(uint16_t distance){
+  return (throw_parameters_t){
+    lookup_table[distance - distance % MEASURE_PERIOD].aim * (MEASURE_PERIOD - distance % MEASURE_PERIOD) / MEASURE_PERIOD +
+    lookup_table[distance - distance % MEASURE_PERIOD + MEASURE_PERIOD].aim * (distance % MEASURE_PERIOD) / MEASURE_PERIOD,
+    lookup_table[distance - distance % MEASURE_PERIOD].thrower * (MEASURE_PERIOD - distance % MEASURE_PERIOD) / MEASURE_PERIOD +
+    lookup_table[distance - distance % MEASURE_PERIOD + MEASURE_PERIOD].thrower * (distance % MEASURE_PERIOD) / MEASURE_PERIOD
+  };
 }
 
 /**
@@ -236,10 +247,10 @@ bool StateMachine::search_for_basket(){
 bool StateMachine::throw_the_ball(){
   // The ball is not thrown yet but we are getting close!
   if(substate[THROW] == THROW_AIM){
-    std::string command = wheel::aim(AIM_POWER);
+    std::string command = wheel::aim(aimer_position);
     serial_write(command);
 
-    command = wheel::thrower(THROWER_SPEED);
+    command = wheel::thrower(thrower_power);
     serial_write(command);
 
     substate[THROW] = THROW_GOAL;
@@ -247,21 +258,21 @@ bool StateMachine::throw_the_ball(){
   }else if(substate[THROW] == THROW_GOAL){
 
     // Thrower motor control
-    std::string command = wheel::thrower(THROWER_SPEED);
+    std::string command = wheel::thrower(thrower_power);
     serial_write(command);
 
     // Wheel control
     command = wheel::move(MOVING_SPEED_THROW, 90, 0);
     serial_write(command);
-
+/*
     if(!ball_in_sight){
       // Start a timer
       substate[THROW] = THROW_GOAL_NO_BALL;
     }
-
+*/
     return false;
   }else if(substate[THROW] == THROW_GOAL_NO_BALL){
-    std::string command = wheel::thrower(THROWER_SPEED);
+    std::string command = wheel::thrower(thrower_power);
     serial_write(command);
 
     command = wheel::move(MOVING_SPEED_THROW, 90, 0);
@@ -300,7 +311,6 @@ void StateMachine::set_state(state_t superstate){
 void StateMachine::set_substate(state_t superstate, substate_t new_substate){
   substate[superstate] = new_substate;
 }
-
 
 void StateMachine::update_ball_position(int16_t x, int16_t y, uint16_t width, uint16_t height){
   object_position_x = x;
@@ -345,11 +355,20 @@ void StateMachine::set_throw_power(uint16_t throw_pwr){
 
 void StateMachine::set_aimer_position(uint16_t aimer_pos){
   aimer_position = aimer_pos;
+  // For debugging
+  serial_write(wheel::aim(aimer_position));
 }
 
 void StateMachine::configure_thrower(throw_parameters_t& throw_parameters){
   aimer_position = throw_parameters.aim;
   thrower_power = throw_parameters.thrower;
+}
+
+void StateMachine::deaim(){
+  serial_write(wheel::deaim());
+  serial_write(wheel::thrower_stop());
+  aimer_position = 0;
+  thrower_power = 0;
 }
 
 bool StateMachine::searching_for_ball(){

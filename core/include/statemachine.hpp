@@ -3,6 +3,7 @@
 
 #include <string>
 
+#include "defines.hpp"
 #include "lookup_table.hpp"
 
 /**
@@ -59,8 +60,8 @@ private:
   bool ball_in_sight = false;
 
   /* Aiming variables */
-  uint16_t aimer_position;  ///< The position of the aimer, determines the arc of the throw
-  uint16_t thrower_power;   ///< How strongly does the motor on the thrower work. Ranges from 1001 to 2000
+  uint16_t aimer_position = AIM_POWER;  ///< The position of the aimer, determines the arc of the throw
+  uint16_t thrower_power = THROWER_SPEED;   ///< How strongly does the motor on the thrower work. Ranges from 1001 to 2000
 
   /* Serial Communication */
   int serial;                  ///< Handle of the serial port
@@ -82,6 +83,14 @@ private:
    */
   void serial_write(
     std::string  ///< [in] String to be sent over serial
+  );
+
+  /* Lookup table functions */
+  /**
+   * Looks up the thrower configuration according to the distace from lookup table
+   */
+  throw_parameters_t look_up(
+    uint16_t distance  ///< [in] Distance between a ball and a basket
   );
 
   /* Control of the movement and actions */
@@ -205,6 +214,11 @@ public:
   void configure_thrower(
     throw_parameters_t& throw_parameters  ///< Struct which contains the aimer arc and thrower power (.aim and .thrower)
   );
+
+  /**
+   * Resets the aimer and thrower to default value
+   */
+  void deaim();
 
   /**
    * Update the position of the sought out object

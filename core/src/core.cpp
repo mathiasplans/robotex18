@@ -5,9 +5,11 @@
 #include <boost/bind.hpp>
 #include <boost/ref.hpp>
 
+#include "wheelcontrol.hpp"
 #include "statemachine.hpp"
 #include "boost/bind.hpp"
 
+#include <poll.h>
 #include <regex>
 
 /**
@@ -63,8 +65,11 @@ std::vector<std::string> split(std::string str, std::string sep = " ") {
 /**
  *
  */
-void handle_debug_command(StateMachine& sm){
+void handle_debug_command(StateMachine& sm, pollfd* cinfd){
   static std::string input_command;
+
+  // Return if nothing is on the command line
+  if(!poll(cinfd, 1, 1)) return;
 
   // Handle the input commands
   if(std::getline(std::cin, input_command)){
@@ -83,6 +88,10 @@ void handle_debug_command(StateMachine& sm){
     else if(input_command == std::string("pause")){
       sm.pause_machine();
       std::cout << "The robot has been paused" << std::endl;
+    }
+    else if(input_command == std::string("deaim")){
+      sm.deaim();
+      std::cout << "The thrower has been reconfigured to it's default state" << std::endl;
     }
     // Currently doesn't work
     else if(std::regex_search(input_command, std::regex("set state [A-Z_]+"))){
@@ -162,8 +171,13 @@ int main(int argc, char **argv){
   // command.ball = s.searching_for_ball();
   // bob.publish(command);
 
+  /* Polling for stdin */
+  pollfd cinfd[1];
+  cinfd[0].fd = fileno(stdin);
+  cinfd[0].events = POLLIN;
+
   while(ros::ok()){
-    handle_debug_command(sm);
+    handle_debug_command(sm, cinfd);
 
     // Run the State Machine once
     sm.state_machine();

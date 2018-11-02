@@ -10,13 +10,13 @@ double wheel::speed_of_wheel(wheel_t wheel, double speed, double direction, doub
 
 std::string wheel::move(double speed, double direction, double angular_velocity){
   return std::string("sd:") +
-    SPEED_OF_WHEEL(WHEEL_1, sped, dir, ang) +
+    SPEED_OF_WHEEL(WHEEL_1, speed, direction, angular_velocity) +
     std::string(":") +
-    SPEED_OF_WHEEL(WHEEL_2, sped, dir, ang) +
+    SPEED_OF_WHEEL(WHEEL_2, speed, direction, angular_velocity) +
     std::string(":") +
-    SPEED_OF_WHEEL(WHEEL_3, sped, dir, ang) +
+    SPEED_OF_WHEEL(WHEEL_3, speed, direction, angular_velocity) +
     std::string(":") +
-    SPEED_OF_WHEEL(WHEEL_4, sped, dir, ang) +
+    SPEED_OF_WHEEL(WHEEL_4, speed, direction, angular_velocity) +
     std::string("\r\n");
 }
 

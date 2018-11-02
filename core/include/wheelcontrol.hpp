@@ -10,10 +10,10 @@ namespace wheel{
    * Enum of wheel angles
    */
   typedef enum{
-    WHEEL_1 = 225,  ///< Angle of the first wheel
-    WHEEL_2 = 315,  ///< Angle of the second wheel
-    WHEEL_3 = 45,   ///< Angle of the third wheel
-    WHEEL_4 = 135,  ///< Angle of the fourth wheel
+    WHEEL_1 = 45,  ///< Angle of the first wheel
+    WHEEL_2 = 135,  ///< Angle of the second wheel
+    WHEEL_3 = 225,   ///< Angle of the third wheel
+    WHEEL_4 = 315,  ///< Angle of the fourth wheel
   }wheel_t;
 
   /**

@@ -24,7 +24,7 @@
 /**
  * Moving speed when aproaching a ball when throwing
  */
-#define MOVING_SPEED_THROW    10
+#define MOVING_SPEED_THROW    19
 
 /**
  * Moving speed when orbiting an object
@@ -60,7 +60,7 @@
  * Speed of the thrower and aimer's position
  */
 #define THROWER_SPEED         1500
-#define AIM_POWER             0
+#define AIM_POWER             1001
 
 /**
  * The distance from wheel to robot center, in cm

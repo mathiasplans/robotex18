@@ -9,7 +9,15 @@ typedef struct{
   uint16_t thrower;
 }throw_parameters_t;
 
+/**
+ * 
+ */
 #define THROW_TYPE(aim, power) (throw_parameters_t){aim, power}
+
+/**
+ * The distance between measurements, in centimeters
+ */
+#define MEASURE_PERIOD (uint16_t)8
 
 /**
  *
