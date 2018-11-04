@@ -36,10 +36,10 @@ static uint16_t aim_position = 0;
 
 std::string wheel::aim(uint16_t aim_power){
   aim_position += aim_power;
-  return std::string("st:") + std::to_string(aim_power) + std::string("\r\n");
+  return std::string("a:") + std::to_string(aim_power) + std::string("\r\n");
 }
 
 std::string wheel::deaim(){
   aim_position = 0;
-  return std::string("st:-") + std::to_string(aim_position) + std::string("\r\n");
+  return std::string("a:-") + std::to_string(aim_position) + std::string("\r\n");
 }

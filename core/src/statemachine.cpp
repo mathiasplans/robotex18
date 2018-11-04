@@ -22,7 +22,6 @@ void StateMachine::state_machine(void){
   if(stop_signal /*|| reset_signal*/){
     reset_signal = false;
     serial_write(wheel::stop());
-    serial_write(wheel::thrower_stop());
     state = THROW;
     substate[THROW] = THROW_GOAL;
     command_delay.sleep();
