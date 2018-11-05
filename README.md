@@ -9,7 +9,7 @@
 Install ROS kinetic for your OS. For windows [this](https://janbernloehr.de/2017/06/10/ros-windows) worked. 
 
 ### our core
-
+0. make sure you're in a linux environment (aka do `bash` if on windows)
 1. make a folder `mkdir robotex18 && cd robotex18`
 2. `git clone --recursive https://github.com/mathiasplans/robotex18.git`
 3. rename the inner robotex18 to `src`
