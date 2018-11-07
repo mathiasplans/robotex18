@@ -79,6 +79,12 @@ void StateMachine::state_machine(void){
   }
 }
 
+void StateMachine::complete_throw(const ros::TimerEvent&){
+  throw_completed = true;
+  throwing_timer.stop();
+  throwing_timer.setPeriod(ros::Duration(THROW_TIME));
+}
+
 void StateMachine::serial_write(std::string string){
   // Create a message
   core::Command msg;
@@ -100,8 +106,10 @@ void StateMachine::reset_substates(){
   substate[SEARCH_BASKET] = BASKET_ORBIT_BALL;
 }
 
-StateMachine::StateMachine(ros::Publisher& topic) : publisher(topic), command_delay(COMMAND_RATE) {
+StateMachine::StateMachine(ros::Publisher& topic, ros::NodeHandle& node) : publisher(topic), command_delay(COMMAND_RATE), ros_node(node), throwing_timer(ros_node.createTimer(ros::Duration(THROW_TIME), complete_throw, true)) {
   std::cout << "A StateMachine object was created with publisher" << std::endl;
+  throwing_timer.stop();
+  throwing_timer.setPeriod(ros::Duration(THROW_TIME));
   reset_substates();
 }
 
@@ -263,12 +271,12 @@ bool StateMachine::throw_the_ball(){
     // Wheel control
     command = wheel::move(MOVING_SPEED_THROW, 90, 0);
     serial_write(command);
-/*
+
     if(!ball_in_sight){
-      // Start a timer
+      throwing_timer.start();
       substate[THROW] = THROW_GOAL_NO_BALL;
     }
-*/
+
     return false;
   }else if(substate[THROW] == THROW_GOAL_NO_BALL){
     std::string command = wheel::thrower(thrower_power);
@@ -277,19 +285,15 @@ bool StateMachine::throw_the_ball(){
     command = wheel::move(MOVING_SPEED_THROW, 90, 0);
     serial_write(command);
 
-    if(false /* NOTE: Placeholder, the timer status should be checked here */){
-        substate[THROW] = THROW_DEAIM;
+    if(throw_completed){
+      throw_completed = false;
+      substate[THROW] = THROW_AIM;
+
+      // Stop the robot
+      command = wheel::stop();
+      serial_write(command);
     }
 
-    return false;
-  }else if(substate[THROW] == THROW_DEAIM){
-    std::string command = wheel::deaim();
-    serial_write(command);
-
-    command = wheel::stop();
-    serial_write(command);
-
-    substate[THROW] = THROW_AIM;
     return true;
   }
 }

@@ -70,14 +70,24 @@
 
 /**
  * The radios of a wheel, in cm
- * 
+ *
  * Note: Probably not needed as precise speed is not really needed right now and this acts just as a linear multiplier to all moving speeds
  */
 #define WHEEL_R               3.5
 
 /**
- * Wheel speed to mainboard units. Can be calculated using the formula from DigiLabor's omnimotion page. 
- * Value is currently determined experimentally. 
+ * Wheel speed to mainboard units. Can be calculated using the formula from DigiLabor's omnimotion page.
+ * Value is currently determined experimentally.
  */
 
 #define MOVING_COEFFICIENT    0.5
+
+/**
+ * When the robot starts to throw a ball, the ball will be out of frame.
+ * Normally the robot would reset and start searchig for a ball, but we
+ * want it to continue for a specific time so that
+ * the thwow will be completed instead.
+ *
+ * In seconds
+ */
+#define THROW_TIME            3

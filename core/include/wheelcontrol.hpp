@@ -20,27 +20,27 @@ namespace wheel{
    * Get the speed of the specific wheel with motion meant for specific speed and direction
    */
   double speed_of_wheel(
-    wheel_t wheel,           ///< [in] Index of the wheel
-    double speed,            ///< [in] Speed of the movement
-    double direction,        ///< [in] Direction of movement
-    double angular_velocity  ///< [in] Spinning speed while moving
+    wheel_t wheel,           ///< Index of the wheel
+    double speed,            ///< Speed of the movement
+    double direction,        ///< Direction of movement
+    double angular_velocity  ///< Spinning speed while moving
   );
 
   /**
    * Get the command for moving a single wheel
    */
   std::string set_speed(
-    wheel_t wheel,      ///< [in] Index of the wheel
-    int16_t speed       ///< [in] Speed of the movement
+    wheel_t wheel,      ///< Index of the wheel
+    int16_t speed       ///< Speed of the movement
   );
 
   /**
    * Get the command for moving in a specific direction and speed
    */
   std::string move(
-    double speed,            ///< [in] Speed of the movement
-    double direction,        ///< [in] Direction of the movement
-    double angular_velocity  ///< [in] Spinning speed while moving
+    double speed,            ///< Speed of the movement
+    double direction,        ///< Direction of the movement
+    double angular_velocity  ///< Spinning speed while moving
   );
 
   /**
@@ -52,7 +52,7 @@ namespace wheel{
    * Get the command for setting the speef of the thrower
    */
   std::string thrower(
-    uint16_t speed  ///< [in] Speed of the thrower. Ranges from 1001 to 2000.
+    uint16_t speed  ///< Speed of the thrower. Ranges from 1001 to 2000.
   );
 
   /**
@@ -66,10 +66,4 @@ namespace wheel{
   std::string aim(
     uint16_t aim_power
   );
-
-  /**
-   * This function resets the aim motor to it's default state
-   */
-  std::string deaim();
-
 }; /* namespace wheel */

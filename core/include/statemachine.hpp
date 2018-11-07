@@ -30,14 +30,12 @@ typedef enum{
   BASKET_ORBIT_BASKET,   ///< The robot orbits the basket until the ball is in the middle of the frame
   THROW_AIM,             ///< Robot aims the thrower and get's the best throwing power
   THROW_GOAL,            ///< Robot moves forward and throws the ball
-  THROW_GOAL_NO_BALL,    ///< Robot throws the ball even if ball is not in sight. Usually,
+  THROW_GOAL_NO_BALL     ///< Robot throws the ball even if ball is not in sight. Usually,
                          ///< at the end of the throw, the ball is not in sight,
                          ///< even if it's not throwh yet. To avoid not throwing the ball,
                          ///< the robot has to continue throwing even if ball is not in sight.
                          ///< After a brief time, the robot will exit this state
                          ///< and return to searching the ball.
-  THROW_DEAIM            ///< Should the robot be finished with throwing,
-                         ///< it returns the thrower to it's default state
 }substate_t;
 
 /**
@@ -55,35 +53,51 @@ private:
   float object_position_y;  ///< Y coordinates of the object
   float basket_position_x;  ///< X coordinates of the basket
   float basket_position_y;  ///< Y coordinates of the basket
-  bool object_in_sight = false;     ///< True if any objects are in sight
-  bool basket_in_sight;
-  bool basket_found = false;
-  bool ball_in_sight = false;
+
+  /* Variables which determine the decisions of the robot */
+  bool object_in_sight = false;  ///< True if any objects are in sight
+  bool basket_in_sight = false;  ///< True if a basket is in sight
+  bool basket_found = false;     ///< True if basket has been found
+  bool ball_in_sight = false;    ///< True if a ball is in sight
+  bool throw_completed = false;  ///< True if a throw was a success
 
   /* Aiming variables */
-  uint16_t aimer_position = AIM_POWER;  ///< The position of the aimer, determines the arc of the throw
-  uint16_t thrower_power = THROWER_SPEED;   ///< How strongly does the motor on the thrower work. Ranges from 1001 to 2000
+  uint16_t aimer_position = AIM_POWER;     ///< The position of the aimer, determines the arc of the throw
+  uint16_t thrower_power = THROWER_SPEED;  ///< How strongly does the motor on the thrower work. Ranges from 1001 to 2000
 
   /* Serial Communication */
-  int serial;                  ///< Handle of the serial port
+  int serial;  ///< Handle of the serial port
 
   /* State variables */
-  state_t state = IDLE;        ///< The internal state of the state machine. For details, refer to state_t
-  substate_t substate[NUMBER_OF_STATES];
+  state_t state = IDLE;                   ///< The internal state of the state machine. For details, refer to state_t
+  substate_t substate[NUMBER_OF_STATES];  ///< An array of substates. The superstates are the indices of this array.
 
   /* ROS variables */
   ros::Publisher publisher;    ///< Publisher object for serial node
   ros::Rate command_delay;     ///< Delay between sending the commands
+  ros::NodeHandle& ros_node;   ///< Reference to ROS Node Handle object
+  ros::Timer throwing_timer;   ///< Timer for throwing with no ball in frame
 
   /* Misc variables */
   bool searching_ball = true;  ///< True if robot requires information about ball position
+
+  /* Internal state functions */
+  /**
+   * This will notify the machine that it's OK to start searching
+   * for a ball again and that the preceding throw was completed
+   *
+   * Sets the throw_completed to true.
+   *
+   * It is vital that after reading the throw_completed, it should be reset back to false
+   */
+  void complete_throw(const ros::TimerEvent&);
 
   /* Communication functions */
   /**
    * Function for communicating with serial node.
    */
   void serial_write(
-    std::string  ///< [in] String to be sent over serial
+    std::string  ///< String to be sent over serial
   );
 
   /* Lookup table functions */
@@ -91,7 +105,7 @@ private:
    * Looks up the thrower configuration according to the distace from lookup table
    */
   throw_parameters_t look_up(
-    uint16_t distance  ///< [in] Distance between a ball and a basket
+    uint16_t distance  ///< Distance between a ball and a basket
   );
 
   /* Control of the movement and actions */
@@ -132,9 +146,10 @@ public:
   StateMachine();
 
   /**
-   * Constructor with publisher object, use this if you want the object to communicate with serial port
+   * Constructor with publisher object, use this if you want
+   * the object to communicate with serial port or be functional at all
    */
-  StateMachine(ros::Publisher&);
+  StateMachine(ros::Publisher&, ros::NodeHandle&);
 
   /**
    * The State Machine logic. Calling this functon will tick the state machine. Put this into the infinite loop
@@ -150,22 +165,22 @@ public:
    * Get the sub-state of the state of the State Machine
    */
   substate_t get_substate(
-    state_t superstate  ///< [in] Superstate whom substate is called upon
+    state_t superstate  ///< Superstate whom substate is called upon
   );
 
   /**
    * Change the state of the State Machine
    */
   void set_state(
-    state_t superstate  ///< [in] State will be set to this
+    state_t superstate  ///< State will be set to this
   );
 
   /**
    * Change the sub-state of a state of the State Machine
    */
   void set_substate(
-    state_t superstate,      ///< [in] Superstate whom substate will be set
-    substate_t new_substate  ///< [in] Sub-state will be set to this
+    state_t superstate,      ///< Superstate whom substate will be set
+    substate_t new_substate  ///< Sub-state will be set to this
   );
 
   /**
@@ -225,28 +240,28 @@ public:
    * Update the position of the sought out object
    */
   void update_ball_position(
-    int16_t x,       ///< [in] X coordinates of the object
-    int16_t y,       ///< [in] Y coordinates of the object
-    uint16_t width,  ///< [in] Width of the camera's frame
-    uint16_t height  ///< [in] Height of the camera's frame
+    int16_t x,       ///< X coordinates of the object
+    int16_t y,       ///< Y coordinates of the object
+    uint16_t width,  ///< Width of the camera's frame
+    uint16_t height  ///< Height of the camera's frame
   );
 
   void update_basket_position(
-    int16_t x,       ///< [in] X coordinates of the object
-    int16_t y,       ///< [in] Y coordinates of the object
-    uint16_t width,  ///< [in] Width of the camera's frame
-    uint16_t height  ///< [in] Height of the camera's frame
+    int16_t x,       ///< X coordinates of the object
+    int16_t y,       ///< Y coordinates of the object
+    uint16_t width,  ///< Width of the camera's frame
+    uint16_t height  ///< Height of the camera's frame
   );
 
   /**
    * Lets the State Machine know if any objects are in sight (Balls, baskets, etc.)
    */
   void set_object_in_sight(
-    bool in_sight  ///< [in] True if something is in sight
+    bool in_sight  ///< True if something is in sight
   );
 
   void set_basket_in_sight(
-    bool in_sight  ///< [in] True if something is in sight
+    bool in_sight  ///< True if something is in sight
   );
 
   /**
