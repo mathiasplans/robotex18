@@ -45,10 +45,6 @@ void handle_debug_command(StateMachine& sm, pollfd* cinfd){
       sm.pause_machine();
       std::cout << "The robot has been paused" << std::endl;
     }
-    else if(input_command == std::string("deaim")){
-      sm.deaim();
-      std::cout << "The thrower has been reconfigured to it's default state" << std::endl;
-    }
     // Currently doesn't work
     else if(std::regex_search(input_command, std::regex("set state [A-Z_]+"))){
       std::string state_string = split(input_command)[2];
