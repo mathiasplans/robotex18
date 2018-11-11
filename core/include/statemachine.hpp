@@ -17,7 +17,6 @@ typedef enum{
   MOVE_TO_BALL,      ///< Once the ball is in the middle of the frame (Doesn't have to be if aproaching from an angle), move up to it
   SEARCH_BASKET,     ///< If the ball is sufficently close, search for the basket while keeping the ball in front of the robot
   THROW,             ///< Once the ball and the baslet are in the middle of the camera's frame, throw the ball to the basket
-  CORRECT_POSITION,  ///< If the basket is in the middle of the frame and the ball isn't, correct the positon
   NUMBER_OF_STATES
 }state_t;
 
@@ -81,6 +80,12 @@ private:
   /* Misc variables */
   bool searching_ball = true;  ///< True if robot requires information about ball position
 
+  /* Developement variables */
+  bool lookuptable_mode = false;  ///< If this is true, the robot is in a special mode where filling the lookup table is easier
+  int8_t throwing_direction = 1;  ///< If this variable is 1, the robot goes forward when throwing
+                                  ///< If this variable is -1, the robot goes backward when throwing
+                                  ///< This is used for filling the lookup table
+
   /* Internal state functions */
   /**
    * This will notify the machine that it's OK to start searching
@@ -91,6 +96,11 @@ private:
    * It is vital that after reading the throw_completed, it should be reset back to false
    */
   void complete_throw(const ros::TimerEvent&);
+
+  /**
+   * A timer for debugging and developement purposes
+   */
+  void debug_timer_handler(const ros::TimerEvent&);
 
   /* Communication functions */
   /**
@@ -189,6 +199,11 @@ public:
   void reset_substates();
 
   /**
+   * Resets the minor state holders (throw_completed and the like)
+   */
+  void reset_internal_variables();
+
+  /**
    * Reset the State Machine (Restarts from IDLE state)
    */
   void reset_machine();
@@ -223,6 +238,11 @@ public:
   void set_aimer_position(
     uint16_t aimer_pos  ///< Position of the aimer, ranges from 1000 to 1800
   );
+
+  /**
+   * Enables/Disables lookup table mode
+   */
+  void toggle_lookuptable_generation();
 
   /**
    * Set the variables before the throwing commences

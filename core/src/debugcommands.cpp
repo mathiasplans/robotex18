@@ -87,6 +87,10 @@ void handle_debug_command(StateMachine& sm, pollfd* cinfd){
       sm.set_aimer_position(std::stoi(aimer_string));
       std::cout << "Set the aimer to: " << aimer_string << std::endl;
     }
+    else if(input_command == std::string("lt")){
+      sm.toggle_lookuptable_generation();
+      std::cout << "Enabled/Disabled the lookup table generation mode"
+    }
     else std::cout << "Entered command is invalid" << std::endl;
 
     // Clear the string for the new commands to be read

@@ -21,6 +21,7 @@ void StateMachine::state_machine(void){
   // If stop signale is set, then set to IDLE
   if(stop_signal /*|| reset_signal*/){
     reset_signal = false;
+    reset_internal_variables();
     serial_write(wheel::stop());
     state = THROW;
     substate[THROW] = THROW_GOAL;
@@ -35,13 +36,21 @@ void StateMachine::state_machine(void){
     return;
   }
 
+  if(lookuptable_mode){
+    set_state(THROW);
+    set_substate(THROW, THROW_GOAL);
+  }else{
+    // If the machine is not in lookup table mode, make sure it drives forward
+    throwing_direction = 1;
+  }
+
   // std::cout << state << std::endl;
 
   /* State Handling */
   switch (state) {
     case IDLE:
       // Start searching for the ball
-      state = THROW;
+      state = SEARCH_BALL;
 
       break;
     case SEARCH_BALL:
@@ -67,10 +76,6 @@ void StateMachine::state_machine(void){
     case THROW:
       if(throw_the_ball()) state = SEARCH_BALL;
       searching_ball = false;
-      break;
-
-    case CORRECT_POSITION:
-    std::cout << "here0\n";
       break;
 
     default:
@@ -106,7 +111,13 @@ void StateMachine::reset_substates(){
   substate[SEARCH_BASKET] = BASKET_ORBIT_BALL;
 }
 
-StateMachine::StateMachine(ros::Publisher& topic, ros::NodeHandle& node) : publisher(topic), command_delay(COMMAND_RATE), ros_node(node), throwing_timer(ros_node.createTimer(ros::Duration(THROW_TIME), complete_throw, true)) {
+void StateMachine::debug_timer_handler(const ros::TimerEvent&){
+  // If the machine is in lookup table mode, make sure it alternates between driving forward and backward
+  if(lookuptable_mode)
+    throwing_direction *= -1;
+}
+
+StateMachine::StateMachine(ros::Publisher& topic, ros::NodeHandle& node) : publisher(topic), command_delay(COMMAND_RATE), ros_node(node), throwing_timer(ros_node.createTimer(ros::Duration(THROW_TIME), complete_throw, true)), debug_timer(ros_node.createTimer(ros::Duration(DEBUG_TIME), debug_timer_handler)) {
   std::cout << "A StateMachine object was created with publisher" << std::endl;
   throwing_timer.stop();
   throwing_timer.setPeriod(ros::Duration(THROW_TIME));
@@ -269,7 +280,7 @@ bool StateMachine::throw_the_ball(){
     serial_write(command);
 
     // Wheel control
-    command = wheel::move(MOVING_SPEED_THROW, 90, 0);
+    command = wheel::move(throwing_direction*MOVING_SPEED_THROW, 90, 0);
     serial_write(command);
 
     if(!ball_in_sight){
@@ -335,6 +346,14 @@ void StateMachine::set_basket_in_sight(bool in_sight){
   basket_in_sight = in_sight;
 }
 
+void StateMachine::reset_internal_variables(){
+  object_in_sight = false;
+  basket_in_sight = false;
+  basket_found = false;
+  ball_in_sight = false;
+  throw_completed = false;
+}
+
 void StateMachine::reset_machine(){
   reset_signal = true;
 }
@@ -362,13 +381,16 @@ void StateMachine::set_aimer_position(uint16_t aimer_pos){
   serial_write(wheel::aim(aimer_position));
 }
 
+void StateMachine::toggle_lookuptable_generation(){
+  lookuptable_mode = !lookuptable_mode;
+}
+
 void StateMachine::configure_thrower(throw_parameters_t& throw_parameters){
   aimer_position = throw_parameters.aim;
   thrower_power = throw_parameters.thrower;
 }
 
 void StateMachine::deaim(){
-  serial_write(wheel::deaim());
   serial_write(wheel::thrower_stop());
   aimer_position = 0;
   thrower_power = 0;
