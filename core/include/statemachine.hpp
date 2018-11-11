@@ -76,6 +76,7 @@ private:
   ros::Rate command_delay;     ///< Delay between sending the commands
   ros::NodeHandle& ros_node;   ///< Reference to ROS Node Handle object
   ros::Timer throwing_timer;   ///< Timer for throwing with no ball in frame
+  ros::Timer debug_timer;      ///< Timer for debugging and developing
 
   /* Misc variables */
   bool searching_ball = true;  ///< True if robot requires information about ball position

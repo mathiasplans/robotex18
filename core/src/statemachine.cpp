@@ -23,8 +23,7 @@ void StateMachine::state_machine(void){
     reset_signal = false;
     reset_internal_variables();
     serial_write(wheel::stop());
-    state = THROW;
-    substate[THROW] = THROW_GOAL;
+    state = IDLE;
     command_delay.sleep();
     return;
   }
@@ -113,22 +112,25 @@ void StateMachine::reset_substates(){
 
 void StateMachine::debug_timer_handler(const ros::TimerEvent&){
   // If the machine is in lookup table mode, make sure it alternates between driving forward and backward
-  if(lookuptable_mode)
+  if(lookuptable_mode){
     throwing_direction *= -1;
+  }
 }
 
-StateMachine::StateMachine(ros::Publisher& topic, ros::NodeHandle& node) : publisher(topic), command_delay(COMMAND_RATE), ros_node(node), throwing_timer(ros_node.createTimer(ros::Duration(THROW_TIME), complete_throw, true)), debug_timer(ros_node.createTimer(ros::Duration(DEBUG_TIME), debug_timer_handler)) {
+StateMachine::StateMachine(ros::Publisher& topic, ros::NodeHandle& node) : publisher(topic), command_delay(COMMAND_RATE), ros_node(node) { 
   std::cout << "A StateMachine object was created with publisher" << std::endl;
+  throwing_timer = ros_node.createTimer(ros::Duration(THROW_TIME), &StateMachine::complete_throw, this, true);
   throwing_timer.stop();
   throwing_timer.setPeriod(ros::Duration(THROW_TIME));
+  debug_timer = ros_node.createTimer(ros::Duration(DEBUG_TIME), &StateMachine::debug_timer_handler, this);
   reset_substates();
 }
-
+/*
 StateMachine::StateMachine() : command_delay(COMMAND_RATE) {
   std::cout << "A StateMachine object was created without publisher" << std::endl;
   reset_substates();
 }
-
+*/
 throw_parameters_t StateMachine::look_up(uint16_t distance){
   return (throw_parameters_t){
     lookup_table[distance - distance % MEASURE_PERIOD].aim * (MEASURE_PERIOD - distance % MEASURE_PERIOD) / MEASURE_PERIOD +
@@ -274,7 +276,6 @@ bool StateMachine::throw_the_ball(){
     substate[THROW] = THROW_GOAL;
     return false;
   }else if(substate[THROW] == THROW_GOAL){
-
     // Thrower motor control
     std::string command = wheel::thrower(thrower_power);
     serial_write(command);

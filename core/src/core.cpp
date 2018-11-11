@@ -60,7 +60,7 @@ int main(int argc, char **argv){
   ros::Publisher command_topic_out = n.advertise<core::Command>("commands", 1000);
 
   // Create state machine instance
-  StateMachine sm = StateMachine(command_topic_out);
+  StateMachine sm = StateMachine(command_topic_out, n);
 
   // Subscribe to a message from vision
   ros::Subscriber image_processor = n.subscribe<vision::Ball>("ball", 1000, boost::bind(vision_callback, _1, boost::ref(sm)));

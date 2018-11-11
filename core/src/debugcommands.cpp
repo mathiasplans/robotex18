@@ -69,7 +69,6 @@ void handle_debug_command(StateMachine& sm, pollfd* cinfd){
       else if(substate_string == "THROW_AIM") sm.set_substate(THROW, THROW_AIM);
       else if(substate_string == "THROW_GOAL") sm.set_substate(THROW, THROW_GOAL);
       else if(substate_string == "THROW_GOAL_NO_BALL") sm.set_substate(THROW, THROW_GOAL_NO_BALL);
-      else if(substate_string == "THROW_DEAIM") sm.set_substate(THROW, THROW_DEAIM);
       else std::cout << "Entered substate is invalid" << std::endl;
     }
     else if(input_command == "reset substates"){
@@ -89,7 +88,7 @@ void handle_debug_command(StateMachine& sm, pollfd* cinfd){
     }
     else if(input_command == std::string("lt")){
       sm.toggle_lookuptable_generation();
-      std::cout << "Enabled/Disabled the lookup table generation mode"
+      std::cout << "Enabled/Disabled the lookup table generation mode";
     }
     else std::cout << "Entered command is invalid" << std::endl;
 

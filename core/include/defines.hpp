@@ -24,7 +24,7 @@
 /**
  * Moving speed when aproaching a ball when throwing
  */
-#define MOVING_SPEED_THROW    19
+#define MOVING_SPEED_THROW    31
 
 /**
  * Moving speed when orbiting an object
@@ -91,3 +91,10 @@
  * In seconds
  */
 #define THROW_TIME            3
+
+/**
+ * The duration for the timer for debugging
+ *
+ * In seconds
+ */
+#define DEBUG_TIME            5
