@@ -225,15 +225,18 @@ bool StateMachine::search_for_basket(){
       // command = wheel::stop();
       // ret = true;
       // basket_state = ORBIT_BALL;
-      substate[SEARCH_BASKET] = BASKET_CENTER_BASKET;
+      // substate[SEARCH_BASKET] = BASKET_CENTER_BASKET;
+      ret = true;
     }
 
 
     command = wheel::move(ORBIT_SPEED, 180, -(object_position_x - FRAME_WIDTH / 2) * 0.03);
 
   }else if(substate[SEARCH_BASKET] == BASKET_CENTER_BASKET){
-    if(abs(basket_position_x - FRAME_WIDTH / 2) < POSITION_ERROR)
+    if(abs(basket_position_x - FRAME_WIDTH / 2) < POSITION_ERROR){
+
       substate[SEARCH_BASKET] = BASKET_ORBIT_BASKET;
+    }
 
     double angv = SPIN_CENTER_SPEED * 1.4;
     if(basket_position_x > FRAME_WIDTH / 2){

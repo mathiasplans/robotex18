@@ -72,7 +72,7 @@ int main(int argc, char **argv){
 
   std::cout << "Init finished" << std::endl;
 
-  // // Get the 'ball' rolling. Get it?
+  // // Get the 'ball' rolling. Get it? no
   // core::Bob command;
   // command.ball = s.searching_for_ball();
   // bob.publish(command);
@@ -83,7 +83,7 @@ int main(int argc, char **argv){
   cinfd[0].events = POLLIN;
 
   while(ros::ok()){
-    handle_debug_command(sm, cinfd);
+    //handle_debug_command(sm, cinfd);
 
     // Run the State Machine once
     sm.state_machine();

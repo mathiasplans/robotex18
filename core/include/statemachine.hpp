@@ -43,7 +43,7 @@ typedef enum{
 class StateMachine{
 private:
   /* Machine control */
-  bool stop_signal = true;    ///< If set, the robot will be set to and can not exit the IDLE state
+  bool stop_signal = false;    ///< If set, the robot will be set to and can not exit the IDLE state
   bool reset_signal = false;  ///< If set, the robot will be set to the IDLE state
   bool pause_signal = false;  ///< If set, the robot will be paused, state and substate won't be affected
 
