@@ -19,7 +19,7 @@
 void StateMachine::state_machine(void){
   /* Main Loop */
   // If stop signale is set, then set to IDLE
-  if(stop_signal /*|| reset_signal*/){
+  if(stop_signal || reset_signal){
     reset_signal = false;
     reset_internal_variables();
     serial_write(wheel::stop());
@@ -131,13 +131,8 @@ StateMachine::StateMachine() : command_delay(COMMAND_RATE) {
   reset_substates();
 }
 */
-throw_parameters_t StateMachine::look_up(uint16_t distance){
-  return (throw_parameters_t){
-    lookup_table[distance - distance % MEASURE_PERIOD].aim * (MEASURE_PERIOD - distance % MEASURE_PERIOD) / MEASURE_PERIOD +
-    lookup_table[distance - distance % MEASURE_PERIOD + MEASURE_PERIOD].aim * (distance % MEASURE_PERIOD) / MEASURE_PERIOD,
-    lookup_table[distance - distance % MEASURE_PERIOD].thrower * (MEASURE_PERIOD - distance % MEASURE_PERIOD) / MEASURE_PERIOD +
-    lookup_table[distance - distance % MEASURE_PERIOD + MEASURE_PERIOD].thrower * (distance % MEASURE_PERIOD) / MEASURE_PERIOD
-  };
+throw_info StateMachine::look_up(int distance){
+  return getSpeedForDist(distance);
 }
 
 /**
@@ -201,7 +196,8 @@ bool StateMachine::goto_ball(){
       }
     }
 
-    std::string command = wheel::move(MOVING_SPEED, 90, angv);
+    std::string command = wheel::move(MOVING_SPEED, 90, -(object_position_x - FRAME_WIDTH / 2) * 0.003);
+    // std::cout << command << std::endl;
     serial_write(command);
 
     return false;
@@ -211,7 +207,9 @@ bool StateMachine::goto_ball(){
   else{
     std::string command = wheel::stop();
     serial_write(command);
+    // while(ros::ok());
     return true;
+
   }
 }
 
@@ -221,7 +219,7 @@ bool StateMachine::search_for_basket(){
   bool ret = false;
 
   if(substate[SEARCH_BASKET] == BASKET_ORBIT_BALL){
-    if(abs(basket_position_x - FRAME_WIDTH / 2) < POSITION_ERROR * 5 ) {
+    if(abs(basket_position_x - FRAME_WIDTH / 2) < POSITION_ERROR ) {
       // command = wheel::stop();
       // ret = true;
       // basket_state = ORBIT_BALL;
@@ -229,8 +227,15 @@ bool StateMachine::search_for_basket(){
       ret = true;
     }
 
-
-    command = wheel::move(ORBIT_SPEED, 180, -(object_position_x - FRAME_WIDTH / 2) * 0.03);
+    if(basket_in_sight){
+      // Added (int) conversion, not sure if correct. TODO
+      int sideways = std::max((int) abs((basket_position_x - FRAME_WIDTH / 2) * 0.09), 15);
+      int dir = sgn(basket_position_x - FRAME_WIDTH / 2) == -1 ? 0 : 180;
+      command = wheel::move(sideways , dir, sgn(basket_position_x - FRAME_WIDTH / 2) * (object_position_x - FRAME_WIDTH / 2) * 0.005);
+      std::cout << sideways << std::endl;
+    }else{
+      command = wheel::move(ORBIT_SPEED, 0, -(object_position_x - FRAME_WIDTH / 2) * 0.005);
+    }
 
   }else if(substate[SEARCH_BASKET] == BASKET_CENTER_BASKET){
     if(abs(basket_position_x - FRAME_WIDTH / 2) < POSITION_ERROR){
@@ -270,21 +275,15 @@ bool StateMachine::search_for_basket(){
 bool StateMachine::throw_the_ball(){
   // The ball is not thrown yet but we are getting close!
   if(substate[THROW] == THROW_AIM){
-    std::string command = wheel::aim(aimer_position);
-    serial_write(command);
 
-    command = wheel::thrower(thrower_power);
-    serial_write(command);
-
+    configure_thrower(look_up(basket_dist));
     substate[THROW] = THROW_GOAL;
+
     return false;
   }else if(substate[THROW] == THROW_GOAL){
-    // Thrower motor control
-    std::string command = wheel::thrower(thrower_power);
-    serial_write(command);
 
     // Wheel control
-    command = wheel::move(throwing_direction*MOVING_SPEED_THROW, 90, 0);
+    std::string command = wheel::move(throwing_direction*MOVING_SPEED_THROW, 90, 0);
     serial_write(command);
 
     if(!ball_in_sight){
@@ -294,22 +293,21 @@ bool StateMachine::throw_the_ball(){
 
     return false;
   }else if(substate[THROW] == THROW_GOAL_NO_BALL){
-    std::string command = wheel::thrower(thrower_power);
-    serial_write(command);
 
-    command = wheel::move(MOVING_SPEED_THROW, 90, 0);
+    std::string command = wheel::move(MOVING_SPEED_THROW, 90, 0);
     serial_write(command);
 
     if(throw_completed){
       throw_completed = false;
       substate[THROW] = THROW_AIM;
-
+      command = wheel::thrower(0);
+      serial_write(command);
       // Stop the robot
       command = wheel::stop();
       serial_write(command);
+      return true;
     }
-
-    return true;
+    return false;
   }
 }
 
@@ -350,6 +348,10 @@ void StateMachine::set_basket_in_sight(bool in_sight){
   basket_in_sight = in_sight;
 }
 
+void StateMachine::set_basket_dist(int dist){
+  basket_dist = dist;
+}
+
 void StateMachine::reset_internal_variables(){
   object_in_sight = false;
   basket_in_sight = false;
@@ -375,29 +377,31 @@ void StateMachine::pause_machine(){
   pause_signal = true;
 }
 
-void StateMachine::set_throw_power(uint16_t throw_pwr){
-  thrower_power = throw_pwr;
-}
-
-void StateMachine::set_aimer_position(uint16_t aimer_pos){
-  aimer_position = aimer_pos;
-  // For debugging
-  serial_write(wheel::aim(aimer_position));
-}
-
 void StateMachine::toggle_lookuptable_generation(){
   lookuptable_mode = !lookuptable_mode;
 }
 
-void StateMachine::configure_thrower(throw_parameters_t& throw_parameters){
-  aimer_position = throw_parameters.aim;
-  thrower_power = throw_parameters.thrower;
+void StateMachine::set_throw_power(uint16_t power) {
+  std::string command = wheel::thrower(power);
+  serial_write(command);
+}
+void StateMachine::set_aimer_position(uint16_t angle) {
+  std::string command = wheel::aim(angle);
+  serial_write(command);
+}
+
+void StateMachine::configure_thrower(const throw_info& throw_parameters){
+
+  std::string command = wheel::aim(throw_parameters.angle);
+  serial_write(command);
+
+  command = wheel::thrower(throw_parameters.dist);
+  serial_write(command);
 }
 
 void StateMachine::deaim(){
   serial_write(wheel::thrower_stop());
-  aimer_position = 0;
-  thrower_power = 0;
+  serial_write(wheel::aim(1000));
 }
 
 bool StateMachine::searching_for_ball(){

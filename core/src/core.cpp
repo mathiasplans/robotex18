@@ -18,7 +18,10 @@
  */
 void vision_callback(const vision::Ball::ConstPtr& msg, StateMachine& sm){
   if(msg->ballX < 0) {
-    if(sm.get_state() != THROW) sm.reset_machine();
+    if(sm.get_state() != THROW && sm.get_state() != SEARCH_BALL && sm.get_state() != IDLE) {
+      std::cout << "RESETTING state: " << sm.get_state()  << "\n";
+      sm.reset_machine();
+    }
   }else{
     // std::cout << "Found a ball!" << std::endl;
     sm.update_ball_position(msg->ballX, msg->ballY, msg->width, msg->height);
@@ -30,6 +33,7 @@ void vision_callback2(const vision::Ball::ConstPtr& msg, StateMachine& sm){
   // ROS_INFO("I heard: [%d, %d]", msg->ballX, msg->ballY);
 
   if(msg->ballX < 0) {
+    sm.set_basket_in_sight(false);
     // s.reset_machine();
   }else{
     sm.update_basket_position(msg->ballX, msg->ballY, msg->width, msg->height);

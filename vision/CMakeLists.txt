@@ -18,6 +18,7 @@ find_package(Boost REQUIRED)
 
 find_package(OpenCV 3 REQUIRED)
 add_message_files(FILES Ball.msg)
+add_message_files(FILES BasketRelative.msg)
 add_message_files(FILES Threshold.msg)
 add_message_files(FILES Break.msg)
 add_message_files(FILES Output_type.msg)

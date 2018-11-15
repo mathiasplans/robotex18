@@ -61,8 +61,7 @@ private:
   bool throw_completed = false;  ///< True if a throw was a success
 
   /* Aiming variables */
-  uint16_t aimer_position = AIM_POWER;     ///< The position of the aimer, determines the arc of the throw
-  uint16_t thrower_power = THROWER_SPEED;  ///< How strongly does the motor on the thrower work. Ranges from 1001 to 2000
+  int basket_dist = -1;
 
   /* Serial Communication */
   int serial;  ///< Handle of the serial port
@@ -115,8 +114,8 @@ private:
   /**
    * Looks up the thrower configuration according to the distace from lookup table
    */
-  throw_parameters_t look_up(
-    uint16_t distance  ///< Distance between a ball and a basket
+  throw_info look_up(
+    int distance  ///< Distance between a ball and a basket
   );
 
   /* Control of the movement and actions */
@@ -249,7 +248,7 @@ public:
    * Set the variables before the throwing commences
    */
   void configure_thrower(
-    throw_parameters_t& throw_parameters  ///< Struct which contains the aimer arc and thrower power (.aim and .thrower)
+    const throw_info& throw_parameters  ///< Struct which contains the aimer arc and thrower power (.aim and .thrower)
   );
 
   /**
@@ -283,6 +282,10 @@ public:
 
   void set_basket_in_sight(
     bool in_sight  ///< True if something is in sight
+  );
+
+  void set_basket_dist(
+    int dist
   );
 
   /**

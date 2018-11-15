@@ -9,6 +9,7 @@
 #include "vision/Ball.h"
 #include "vision/Threshold.h"
 #include "vision/Output_type.h"
+#include "vision/BasketRelative.h"
 #include <boost/bind.hpp>
 #include <cmath>
 #include "core/Bob.h"
@@ -98,7 +99,7 @@ void ball_detection(image_transport::Publisher& pub, ros::Publisher& ballPub){
     
     for( int i = 0; i< contours.size(); i++ ){
         if(radius[i] < 3 ) continue;//|| radius[i] > 55 || center[i].y < 100) continue;
-        if(polsby_doppler(contours[i]) < 0.7) continue;
+        if(polsby_doppler(contours[i]) < 0.65) continue;
         foundCount++;
         if(radius[i] > largestRadius){
             largestIndex = i;
@@ -110,7 +111,7 @@ void ball_detection(image_transport::Publisher& pub, ros::Publisher& ballPub){
 
     vision::Ball ball;
     
-    if(largestIndex >= 0 && frameCount > 15){
+    if(largestIndex >= 0){
         
         // abs(center[largestIndex].x - lastx) < 30 && abs(center[largestIndex].y - lasty) < 30
         if(true){
@@ -166,7 +167,7 @@ void ball_detection(image_transport::Publisher& pub, ros::Publisher& ballPub){
 
 }
 
-void basket_detection(image_transport::Publisher& pub, ros::Publisher& basketPub){
+void basket_detection(image_transport::Publisher& pub, ros::Publisher& basketPub, ros::Publisher& basketRelPub){
     Mat cframe = color.first;
     Mat dframe = depth.first;
 
@@ -250,7 +251,14 @@ void basket_detection(image_transport::Publisher& pub, ros::Publisher& basketPub
             sum += vals[i];
         }
         // putText(out, to_string(a), Point(mouse.x + 5, mouse.y + 5), FONT_HERSHEY_SIMPLEX, 1, Scalar(0,0,0), 2); // Mouse testing
-        putText(out, to_string(sum/vals.size()), Size(130, 640 - 100), FONT_HERSHEY_SIMPLEX, 3, Scalar(255,0,0), 5);
+        int depth = sum/vals.size();
+
+        
+        vision::BasketRelative basket;
+        basket.depth = depth;
+        basketRelPub.publish(basket);
+
+        putText(out, to_string(depth), Size(130, 640 - 100), FONT_HERSHEY_SIMPLEX, 3, Scalar(255,0,0), 5);
         
         drawContours(out, contours, largestIndex, Scalar(255, 0, 0));
         rectangle(out, r.tl(), r.br(), Scalar(0,0,255), 1, 8, 0); // Mouse testing
@@ -436,6 +444,7 @@ int main(int argc, char **argv){
 
     ros::Publisher ballPub = n.advertise<vision::Ball>("ball", 1);
     ros::Publisher basketPub = n.advertise<vision::Ball>("basket", 1);
+    ros::Publisher basketRelPub = n.advertise<vision::BasketRelative>("basketrelative", 1);
     
     
     // ros::spin();
@@ -452,7 +461,7 @@ int main(int argc, char **argv){
                 cArr = false;
                 frameCount++;
                 // cout << "---------------------------------------------------\n";
-                basket_detection(basket_pub, basketPub);
+                basket_detection(basket_pub, basketPub, basketRelPub);
 
                 ball_detection(ball_pub, ballPub);
 
