@@ -7,10 +7,10 @@
 
 using namespace std;
 
-struct throw_info {
+typedef struct{
   int dist;
   int angle;
-};
+}throw_info_t;
 
 
 // I know it's bad, get over it!
@@ -52,7 +52,7 @@ static vector< vector<int> > speeds_table = {
 };
 
 /**
- * Returns the desired thrower BLDC speed in microseconds for the given 
+ * Returns the desired thrower BLDC speed in microseconds for the given
  * distance and angle or -1 if a suitable value cannot be found.
 */
 inline int getSpeedForDistAndAngle(int dist, int angle){
@@ -67,7 +67,7 @@ inline int getSpeedForDistAndAngle(int dist, int angle){
     int closest_lower  = 0;
     int closest_higher = 9999;
     int closest_higher_spd, closest_lower_spd;
-    
+
     for(int i = 0; i < correct_angle.size(); i++){
         int elem_dist = correct_angle[i][0];
         int elem_speed = correct_angle[i][1];
@@ -79,7 +79,7 @@ inline int getSpeedForDistAndAngle(int dist, int angle){
             closest_lower = elem_dist;
             closest_lower_spd = elem_speed;
         }
-        
+
         //cout << correct_angle[i][0] << "\t" << correct_angle[i][1] << "\t" << correct_angle[i][2] << "\n";
     }
     //cout << "Closest: " << closest_higher << " and " << closest_lower << endl;
@@ -105,20 +105,20 @@ inline int getSpeedForDistAndAngle(int dist, int angle){
 }
 
 /**
- * Gets the desired thrower BLDC speed and angle in microseconds for 
+ * Gets the desired thrower BLDC speed and angle in microseconds for
  * the given distance or -1 for both if the values cannot be found
 */
-inline throw_info getSpeedForDist(int dist_mm){
+inline throw_info_t getSpeedForDist(int dist_mm){
     if(dist_mm < 1200){
-        return throw_info { 1152, getSpeedForDistAndAngle(dist_mm, 1152) };
+        return (throw_info_t) { 1152, getSpeedForDistAndAngle(dist_mm, 1152) };
     }else if(dist_mm < 2500){
-        return throw_info { 1352, getSpeedForDistAndAngle(dist_mm, 1352) };
+        return (throw_info_t) { 1352, getSpeedForDistAndAngle(dist_mm, 1352) };
     }else if(dist_mm < 3000){
-        return throw_info { 1500, getSpeedForDistAndAngle(dist_mm, 1500) };
+        return (throw_info_t) { 1500, getSpeedForDistAndAngle(dist_mm, 1500) };
     }else if(dist_mm < 3490){
-        return throw_info { 1700, getSpeedForDistAndAngle(dist_mm, 1700) };
+        return (throw_info_t) { 1700, getSpeedForDistAndAngle(dist_mm, 1700) };
     }else{
-        return throw_info { -1, -1 };
+        return (throw_info_t) { -1, -1 };
     }
 }
 

@@ -16,30 +16,20 @@
 /**
  * Handles the message from vision package
  */
-void vision_callback(const vision::Ball::ConstPtr& msg, StateMachine& sm){
+void vision_callback_ball(const vision::Ball::ConstPtr& msg, StateMachine& sm){
   if(msg->ballX < 0) {
     if(sm.get_state() != THROW && sm.get_state() != SEARCH_BALL && sm.get_state() != IDLE) {
       std::cout << "RESETTING state: " << sm.get_state()  << "\n";
       sm.reset_machine();
     }
-  }else{
-    // std::cout << "Found a ball!" << std::endl;
-    sm.update_ball_position(msg->ballX, msg->ballY, msg->width, msg->height);
-    sm.set_object_in_sight(true);
   }
+
+  // std::cout << "Found a ball!" << std::endl;
+  sm.update_ball_position(msg->ballX, msg->ballY, msg->width, msg->height);
 }
 
-void vision_callback2(const vision::Ball::ConstPtr& msg, StateMachine& sm){
-  // ROS_INFO("I heard: [%d, %d]", msg->ballX, msg->ballY);
-
-  if(msg->ballX < 0) {
-    sm.set_basket_in_sight(false);
-    // s.reset_machine();
-  }else{
-    sm.update_basket_position(msg->ballX, msg->ballY, msg->width, msg->height);
-    sm.set_basket_in_sight(true);
-  }
-
+void vision_callback_basket(const vision::Ball::ConstPtr& msg, StateMachine& sm){
+  sm.update_basket_position(msg->ballX, msg->ballY, msg->width, msg->height);
 }
 
 /**
@@ -67,9 +57,9 @@ int main(int argc, char **argv){
   StateMachine sm = StateMachine(command_topic_out, n);
 
   // Subscribe to a message from vision
-  ros::Subscriber image_processor = n.subscribe<vision::Ball>("ball", 1000, boost::bind(vision_callback, _1, boost::ref(sm)));
+  ros::Subscriber image_processor = n.subscribe<vision::Ball>("ball", 1000, boost::bind(vision_callback_ball, _1, boost::ref(sm)));
 
-  ros::Subscriber basket_sub = n.subscribe<vision::Ball>("basket", 1000, boost::bind(vision_callback2, _1, boost::ref(sm)));
+  ros::Subscriber basket_sub = n.subscribe<vision::Ball>("basket", 1000, boost::bind(vision_callback_basket, _1, boost::ref(sm)));
 
   // Subscribe to a message from serial
   ros::Subscriber referee_signal = n.subscribe<serial::Ref>("referee_signals", 1000, boost::bind(referee_handler, _1, boost::ref(sm)));
