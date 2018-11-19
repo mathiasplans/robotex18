@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -8,10 +7,9 @@
 using namespace std;
 
 typedef struct{
-  int dist;
-  int angle;
+    int angle;
+    int dist;
 }throw_info_t;
-
 
 // I know it's bad, get over it!
 static vector< vector<int> > speeds_table = {
@@ -80,9 +78,7 @@ inline int getSpeedForDistAndAngle(int dist, int angle){
             closest_lower_spd = elem_speed;
         }
 
-        //cout << correct_angle[i][0] << "\t" << correct_angle[i][1] << "\t" << correct_angle[i][2] << "\n";
     }
-    //cout << "Closest: " << closest_higher << " and " << closest_lower << endl;
 
     if(closest_higher == 9999  ||  closest_lower == 0){
         // did not find enough points to get the speed from this angle
@@ -121,20 +117,3 @@ inline throw_info_t getSpeedForDist(int dist_mm){
         return (throw_info_t) { -1, -1 };
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-// int main(){
-//     int angle, speed;
-//     getSpeedForDist(3000, &speed, &angle);
-//     cout << "\n\n\n\nspeed: " << speed << " @ an angle of: " << angle << endl;
-//     return 0;
-// }

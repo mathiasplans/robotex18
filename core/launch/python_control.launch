@@ -1,8 +1,4 @@
 <launch>
-    <group ns="main">
-        <node pkg="core" name="TheCore" type="core" respawn="false" output="screen"  /> 
-        <!-- launch-prefix="gdb -ex run -\-args" -->
-    </group>
     <!-- <include file = "$(find rosbridge_server)/launch/rosbridge_websocket.launch"/> -->
     <include file = "$(find serial)/launch/serial.launch"/>
     <include file = "$(find vision)/launch/realsense.launch"/>

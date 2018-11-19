@@ -52,6 +52,7 @@ void StateMachine::state_machine(void){
       state = SEARCH_BALL;
 
       break;
+
     case SEARCH_BALL:
       // If the robot hasn't found a ball yet
       if(ball_position_x >= 0){
@@ -69,6 +70,7 @@ void StateMachine::state_machine(void){
         // Update the state
         set_state(MOVE_TO_BALL);
       }
+
       break;
 
     case CENTER_ON_BALL:
@@ -89,6 +91,7 @@ void StateMachine::state_machine(void){
         serial_write(command);
         set_state(MOVE_TO_BALL);
       }
+
       break;
 
     case MOVE_TO_BALL:
@@ -114,6 +117,7 @@ void StateMachine::state_machine(void){
 
         set_state(SEARCH_BASKET);
       }
+
       break;
 
     case SEARCH_BASKET:
@@ -148,13 +152,10 @@ void StateMachine::state_machine(void){
           command = wheel::move(ORBIT_SPEED, 0, -(ball_position_x - FRAME_WIDTH / 2) * 0.005);
         }
 
-        break;
-
-      //
+      // The robot
       }else if(substate[SEARCH_BASKET] == BASKET_CENTER_BASKET){
         if(abs(basket_position_x - FRAME_WIDTH / 2) < POSITION_ERROR){
-
-          substate[SEARCH_BASKET] = BASKET_ORBIT_BASKET;
+          set_substate(SEARCH_BASKET, BASKET_ORBIT_BASKET);
         }
 
         double angv = SPIN_CENTER_SPEED * 1.4;
@@ -164,6 +165,7 @@ void StateMachine::state_machine(void){
 
         command = wheel::move(0, 0, angv);
 
+      //
       }else if(substate[SEARCH_BASKET] == BASKET_ORBIT_BASKET){
         // Calculates the direction of the orbit.
         int dir = sgn(ball_position_x - FRAME_WIDTH / 2) == -1 ? 0 : 180;
@@ -180,6 +182,8 @@ void StateMachine::state_machine(void){
           set_state(THROW);
         }
       }
+
+      break;
 
     case THROW:
       // The ball is not thrown yet but we are getting close!
@@ -228,9 +232,11 @@ void StateMachine::state_machine(void){
       }
 
       break;
+
     default:
       /* Should never get here, ERROR! */
       break;
+      
   }
 }
 
@@ -341,4 +347,8 @@ void StateMachine::configure_thrower(throw_info_t& throw_parameters){
 void StateMachine::deaim(){
   serial_write(wheel::thrower_stop());
   serial_write(wheel::aim(1000));
+}
+
+bool StateMachine::searching_for_ball(){
+  return searching_ball;
 }
