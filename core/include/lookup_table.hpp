@@ -8,8 +8,8 @@
 using namespace std;
 
 struct throw_info {
-  int dist;
-  int angle;
+    int angle;
+    int dist;
 };
 
 
@@ -109,6 +109,7 @@ inline int getSpeedForDistAndAngle(int dist, int angle){
  * the given distance or -1 for both if the values cannot be found
 */
 inline throw_info getSpeedForDist(int dist_mm){
+    std::cout << "throw_dist: " << dist_mm << "\n";
     if(dist_mm < 1200){
         return throw_info { 1152, getSpeedForDistAndAngle(dist_mm, 1152) };
     }else if(dist_mm < 2500){
@@ -121,10 +122,6 @@ inline throw_info getSpeedForDist(int dist_mm){
         return throw_info { -1, -1 };
     }
 }
-
-
-
-
 
 
 

@@ -276,6 +276,7 @@ bool StateMachine::throw_the_ball(){
   // The ball is not thrown yet but we are getting close!
   if(substate[THROW] == THROW_AIM){
 
+    std::cout << "basket_dist: " << basket_dist << std::endl;
     configure_thrower(look_up(basket_dist));
     substate[THROW] = THROW_GOAL;
 
@@ -300,8 +301,11 @@ bool StateMachine::throw_the_ball(){
     if(throw_completed){
       throw_completed = false;
       substate[THROW] = THROW_AIM;
+      
+      // Stop the thrower
       command = wheel::thrower(0);
       serial_write(command);
+
       // Stop the robot
       command = wheel::stop();
       serial_write(command);
@@ -391,7 +395,8 @@ void StateMachine::set_aimer_position(uint16_t angle) {
 }
 
 void StateMachine::configure_thrower(const throw_info& throw_parameters){
-
+  // set_throw_power(throw_parameters.dist);
+  // set_aimer_position(throw_parameters.angle);
   std::string command = wheel::aim(throw_parameters.angle);
   serial_write(command);
 
