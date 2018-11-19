@@ -1,0 +1,8 @@
+<launch>
+
+  <group ns="main">
+    <!-- <node pkg="localization" type="charucoBoardCalibrationLive.py" name="calibrate_aruco" output="screen" /> -->
+    <node pkg="localization" type="state_machine0.py" name="state_machine0" output="screen" /> 
+  </group>
+  
+</launch>
