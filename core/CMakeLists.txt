@@ -24,7 +24,7 @@ generate_messages(DEPENDENCIES std_msgs)
 
 catkin_package()
 
-add_executable(core src/core.cpp src/wheelcontrol.cpp src/statemachine.cpp include/statemachine.hpp include/wheelcontrol.hpp)
+add_executable(core src/core.cpp src/wheelcontrol.cpp src/statemachine.cpp src/debugcommands.cpp include/statemachine.hpp include/wheelcontrol.hpp include/debugcommands.hpp src/speedcontrol.cpp include/speedcontrol.hpp)
 add_dependencies(core ${catkin_EXPORTED_TARGETS})
 add_dependencies(core core_generate_messages_cpp)
 

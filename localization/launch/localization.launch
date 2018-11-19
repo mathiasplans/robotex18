@@ -1,8 +1,10 @@
 <launch>
-
+  
   <group ns="main">
     <!-- <node pkg="localization" type="charucoBoardCalibrationLive.py" name="calibrate_aruco" output="screen" /> -->
-    <node pkg="localization" type="state_machine0.py" name="state_machine0" output="screen" /> 
+    <node pkg="localization" type="testPID.py" name="testPID" output="screen" /> 
   </group>
-  
+
+  <!-- <include file = "$(find serial)/launch/serial.launch"/> -->
+
 </launch>

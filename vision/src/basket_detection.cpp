@@ -28,13 +28,26 @@ bool display_contours = false;
 bool requested = false;
 // --------------------------------------------
 
+void depth_callback(const sensor_msgs::ImageConstPtr& ros_frame){
+    //Convert ros image back to cv::Mat
+    cv_bridge::CvImagePtr ptr;
+    ptr = cv_bridge::toCvCopy(ros_frame, "");
+    Mat frame = ptr->image;
+    frame.convertTo(frame, CV_8U, 0.4);
+    applyColorMap(frame, frame, COLORMAP_JET);
+    
+    // cvtColor(frame, frame, CV_BGRA2BGR);
+    // sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", frame).toImageMsg();
+    // pub.publish(msg);
+    // cout << "hello\n";
+}
 
 // Callbacks
 // --------------------------------------------
 void detection_callback(const sensor_msgs::ImageConstPtr& ros_frame, image_transport::Publisher& pub, ros::Publisher& bpub){
     // If no basket was requested then do not run the logic
     // if(!requested) return;
-
+//    cout << "hi\n";
     //Convert ros image back to cv::Mat
     cv_bridge::CvImagePtr ptr;
     ptr = cv_bridge::toCvCopy(ros_frame, "bgr8");
@@ -159,14 +172,6 @@ void output_callback(const vision::Output_type::ConstPtr& o){
 // --------------------------------------------
 
 
-// --------------------------------------------
-void bob_callback(const core::Bob::ConstPtr& t){
-    if(!t->ball){
-        requested = true;
-    }
-}
-// --------------------------------------------
-
 // Main
 // --------------------------------------------
 int main(int argc, char **argv){
@@ -182,16 +187,19 @@ int main(int argc, char **argv){
     
     image_transport::ImageTransport it(n);
     image_transport::Publisher pub = it.advertise("camera/processed_basket", 1);
+    ros::Subscriber dsub = n.subscribe<sensor_msgs::Image>("camera/depth/image_rect_raw", 100, depth_callback);
     ros::Publisher cpub = n.advertise<vision::Ball>("basket", 5);
     ros::Subscriber sub = n.subscribe<sensor_msgs::Image>("camera/stream", 1, boost::bind(detection_callback, _1, pub, cpub));
     ros::Subscriber tsub = n.subscribe<vision::Threshold>("thresholds/basket", 1, threshold_callback);
     ros::Subscriber osub = n.subscribe<vision::Output_type>("output_type", 1, output_callback);
-    ros::Subscriber csub = n.subscribe<core::Bob>("bob", 10, bob_callback);
+    // ros::Subscriber csub = n.subscribe<core::Bob>("bob", 10, bob_callback);
     
 
-    ros::spin();
+    // ros::spin();
     while(ros::ok()){
-    
+        ros::spinOnce();
+
+
     }
 
     return 0;

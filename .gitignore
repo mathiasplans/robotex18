@@ -34,3 +34,6 @@ build
 
 # ssh key
 robot_bridge.pem
+
+# Swap files
+*.swp

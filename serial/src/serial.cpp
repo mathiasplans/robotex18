@@ -96,6 +96,7 @@ bool command_in_buffer = false;
 void command_handler(const core::Command::ConstPtr& msg){
   command = msg->command;
   command_in_buffer = true;
+  //std::cout << "sending: " << command << "\n";
 }
 
 int serial_port;
@@ -222,7 +223,6 @@ int main(int argc, char **argv){
           continue;
         }
 
-        std::cout << message_tagged << std::endl;
 
         std::string message = remove_tags(message_tagged);
         if (message == "") {
@@ -272,6 +272,7 @@ int main(int argc, char **argv){
           speeds.wheel1 = stoi(split_message[1]);
           speeds.wheel2 = stoi(split_message[2]);
           speeds.wheel3 = stoi(split_message[3]);
+          speeds.wheel4 = stoi(split_message[4]);
 
           wheel_topic_out.publish(speeds);
         }

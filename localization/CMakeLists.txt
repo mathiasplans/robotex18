@@ -8,8 +8,12 @@ add_compile_options(-std=c++14)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  cv_bridge
+  genmsg
+  message_generation
   roscpp
   rospy
+  sensor_msgs
   std_msgs
 )
 
@@ -70,7 +74,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
 #   DEPENDENCIES
-#   std_msgs
+#   sensor_msgs#   std_msgs
 # )
 
 ################################################
@@ -105,7 +109,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES localization
-#  CATKIN_DEPENDS roscpp rospy std_msgs
+  CATKIN_DEPENDS cv_bridge genmsg message_generation roscpp rospy sensor_msgs std_msgs
 #  DEPENDS system_lib
 )
 
