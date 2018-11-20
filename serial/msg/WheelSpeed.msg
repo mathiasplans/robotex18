@@ -1,3 +1,4 @@
 int8 wheel1
 int8 wheel2
 int8 wheel3
+int8 wheel4

@@ -3,13 +3,13 @@
  * TODO: Get camera node to use these for configuration
  * Note: Maybe use a camera driver such as http://wiki.ros.org/libuvc_camera, then camera conf is done through a launch file. Can use these there.
  */
-#define FRAME_HEIGHT          640
-#define FRAME_WIDTH           480
+#define FRAME_HEIGHT          1280
+#define FRAME_WIDTH           720
 
 /**
  * Spinning speed when searching for a ball/basket
  */
-#define SPIN_SEARCH_SPEED     0.5
+#define SPIN_SEARCH_SPEED     0.8
 
 /**
  * Spinning speed when centering on a ball
@@ -19,17 +19,17 @@
 /**
  * Moving speed when moving around the arena
  */
-#define MOVING_SPEED          35
+#define MOVING_SPEED          55
 
 /**
  * Moving speed when aproaching a ball when throwing
  */
-#define MOVING_SPEED_THROW    10
+#define MOVING_SPEED_THROW    31
 
 /**
  * Moving speed when orbiting an object
  */
-#define ORBIT_SPEED           20.0f
+#define ORBIT_SPEED           30
 
 /**
  * Position error of an object. That is how many pixels can an object be out of the intended position.
@@ -44,7 +44,7 @@
 /**
  * How close has the ball have to be for the robot to stop
  */
-#define BALL_IN_FRONT         540 /* Height at which the ball is in front of the robot (Y pixels) */
+#define BALL_IN_FRONT         900 /* Height at which the ball is in front of the robot (Y pixels) */
 
 /**
  * How many commands are sent per second
@@ -57,9 +57,10 @@
 #define COMMAND_DELAY         1000000 / COMMAND_RATE
 
 /**
- * Speed of the thrower
+ * Speed of the thrower and aimer's position
  */
 #define THROWER_SPEED         1500
+#define AIM_POWER             1001
 
 /**
  * The distance from wheel to robot center, in cm
@@ -69,14 +70,31 @@
 
 /**
  * The radios of a wheel, in cm
- * 
+ *
  * Note: Probably not needed as precise speed is not really needed right now and this acts just as a linear multiplier to all moving speeds
  */
 #define WHEEL_R               3.5
 
 /**
- * Wheel speed to mainboard units. Can be calculated using the formula from DigiLabor's omnimotion page. 
- * Value is currently determined experimentally. 
+ * Wheel speed to mainboard units. Can be calculated using the formula from DigiLabor's omnimotion page.
+ * Value is currently determined experimentally.
  */
 
 #define MOVING_COEFFICIENT    0.5
+
+/**
+ * When the robot starts to throw a ball, the ball will be out of frame.
+ * Normally the robot would reset and start searchig for a ball, but we
+ * want it to continue for a specific time so that
+ * the thwow will be completed instead.
+ *
+ * In seconds
+ */
+#define THROW_TIME            3
+
+/**
+ * The duration for the timer for debugging
+ *
+ * In seconds
+ */
+#define DEBUG_TIME            5

@@ -1,6 +1,7 @@
 #include "defines.hpp"
 #include "statemachine.hpp"
 #include "wheelcontrol.hpp"
+#include "lookup_table.hpp"
 
 #include <cstdio>
 #include <cerrno>
@@ -15,18 +16,34 @@
 #include <core/Command.h>
 #include <cmath>
 
+/**
+ * Sign function
+ * https://stackoverflow.com/a/4609795
+ */
+template <typename T> int sgn(T val) {
+  return (T(0) < val) - (val < T(0));
+}
+
 void StateMachine::state_machine(void){
+  static std::string command;
+
   /* Main Loop */
   // If stop signale is set, then set to IDLE
   if(stop_signal || reset_signal){
     reset_signal = false;
+    reset_internal_variables();
     serial_write(wheel::stop());
-    state = IDLE;
+    set_state(IDLE);
     command_delay.sleep();
     return;
   }
 
-  // std::cout << state << std::endl;
+  // If pause signal is set, do nothing
+  if(pause_signal){
+    serial_write(wheel::stop());
+    command_delay.sleep();
+    return;
+  }
 
   /* State Handling */
   switch (state) {
@@ -35,39 +52,198 @@ void StateMachine::state_machine(void){
       state = SEARCH_BALL;
 
       break;
+
     case SEARCH_BALL:
-      if(search_for_ball()) state = MOVE_TO_BALL;
-      searching_ball = true;
+      // If the robot hasn't found a ball yet
+      if(ball_position_x >= 0){
+        // Circle around til a ball is found
+        command = wheel::move(0, 0, SPIN_SEARCH_SPEED);
+        serial_write(command);
+      }
+
+      // If then robot has found a ball, center in on it
+      else{
+        // Stop the robot
+        command = wheel::stop();
+        serial_write(command);
+
+        // Update the state
+        set_state(MOVE_TO_BALL);
+      }
+
       break;
 
     case CENTER_ON_BALL:
-      if(center_on_ball()) state = MOVE_TO_BALL;
-      searching_ball = true;
+      // If the ball is not at the center of the frame
+      if(abs(ball_position_x - FRAME_WIDTH / 2) > POSITION_ERROR){
+        double angv = SPIN_CENTER_SPEED;
+        if(ball_position_x > FRAME_WIDTH / 2){
+          angv *= -1;
+        }
+
+        command = wheel::move(0, 0, angv);
+        serial_write(command);
+      }
+
+      // If the ball is at the center of the frame
+      else{
+        command = wheel::stop();
+        serial_write(command);
+        set_state(MOVE_TO_BALL);
+      }
+
       break;
 
     case MOVE_TO_BALL:
-      if(goto_ball()) state = SEARCH_BASKET;
-      searching_ball = true;
+      // If the ball is not in front of the robot
+      if((ball_position_y < BALL_IN_FRONT)){
+        // In case the ball moves out of the pos error range then rotate a little bit
+        double angv = 0;
+        if(abs(ball_position_x - FRAME_WIDTH / 2) > POSITION_ERROR){
+          angv += SPIN_SEARCH_SPEED / 1.4;
+          if(ball_position_x > FRAME_WIDTH / 2){
+            angv *= -1;
+          }
+        }
+
+        command = wheel::move(MOVING_SPEED, 90, -(ball_position_x - FRAME_WIDTH / 2) * 0.003);
+        serial_write(command);
+      }
+
+      // The ball is in front of the robot
+      else{
+        command = wheel::stop();
+        serial_write(command);
+
+        set_state(SEARCH_BASKET);
+      }
+
       break;
 
     case SEARCH_BASKET:
-      if(search_for_basket()) state = THROW;
-      searching_ball = false;
+      // The robot orbits the ball while searching for basket
+      if(substate[SEARCH_BASKET] == BASKET_ORBIT_BALL){
+        // If basket is sufficently in center
+        if(abs(basket_position_x - FRAME_WIDTH / 2) < POSITION_ERROR) {
+          command = wheel::stop();
+          serial_write(command);
+
+          set_substate(SEARCH_BASKET, BASKET_ORBIT_BASKET);
+          set_state(THROW);
+        }
+
+        // If basket is just in sight
+        if(basket_position_x < 0){
+          // Added (int) conversion, not sure if correct. TODO
+          // Calculate the orbiting speed, gets more slower the more the basket approaches the center. Minimum value is 15
+          int sideways = std::max((int) abs((basket_position_x - FRAME_WIDTH / 2) * 0.09), 15);
+
+          // Calculates the direction of the orbit.
+          int dir = sgn(basket_position_x - FRAME_WIDTH / 2) == -1 ? 0 : 180;
+
+          // Compiles the command for orbiting the ball
+          command = wheel::move(sideways , dir, sgn(basket_position_x - FRAME_WIDTH / 2) * (ball_position_x - FRAME_WIDTH / 2) * 0.005);
+          serial_write(command);
+        }
+
+        // If basket is not in sight
+        else{
+          // Orbit aimlessly
+          command = wheel::move(ORBIT_SPEED, 0, -(ball_position_x - FRAME_WIDTH / 2) * 0.005);
+        }
+
+      // The robot
+      }else if(substate[SEARCH_BASKET] == BASKET_CENTER_BASKET){
+        if(abs(basket_position_x - FRAME_WIDTH / 2) < POSITION_ERROR){
+          set_substate(SEARCH_BASKET, BASKET_ORBIT_BASKET);
+        }
+
+        double angv = SPIN_CENTER_SPEED * 1.4;
+        if(basket_position_x > FRAME_WIDTH / 2){
+          angv *= -1;
+        }
+
+        command = wheel::move(0, 0, angv);
+
+      //
+      }else if(substate[SEARCH_BASKET] == BASKET_ORBIT_BASKET){
+        // Calculates the direction of the orbit.
+        int dir = sgn(ball_position_x - FRAME_WIDTH / 2) == -1 ? 0 : 180;
+
+        // Compile the command
+        command = wheel::move(ORBIT_SPEED * 0.7, dir, -(basket_position_x - FRAME_WIDTH / 2) * 0.02);
+
+        // Orbit the basket til both basket and ball are suffiently in the middle of frame
+        if(abs(ball_position_x - FRAME_WIDTH / 2) < POSITION_ERROR){
+          command = wheel::stop();
+          serial_write(command);
+
+          set_substate(SEARCH_BASKET, BASKET_ORBIT_BALL);
+          set_state(THROW);
+        }
+      }
+
       break;
 
     case THROW:
-      if(throw_the_ball()) state = SEARCH_BALL;
-      searching_ball = false;
-      break;
+      // The ball is not thrown yet but we are getting close!
+      if(substate[THROW] == THROW_AIM){
+        // Configure the thrower
+        configure_thrower(look_up(basket_dist));
 
-    case CORRECT_POSITION:
-    std::cout << "here0\n";
+        // Update the substate
+        set_substate(THROW, THROW_GOAL)
+
+      }else if(substate[THROW] == THROW_GOAL){
+        // Move towards the basket
+        std::string command = wheel::move(throwing_direction*MOVING_SPEED_THROW, 90, 0);
+        serial_write(command);
+
+        // If ball is out of sight (very near the thrower)
+        if(ball_position_x >= 0){
+          // Starts the thrower timer. At the end of this timer, the thrower
+          // stops and the robot starts to search for a new ball
+          throwing_timer.start();
+
+          // Update the substate
+          set_substate(THROW, THROW_GOAL_NO_BALL);
+        }
+
+      }else if(substate[THROW] == THROW_GOAL_NO_BALL){
+        // Move towards the basket
+        std::string command = wheel::move(MOVING_SPEED_THROW, 90, 0);
+        serial_write(command);
+
+        // If the thrower timer has triggered
+        if(throw_completed){
+          // Reset the throw_complete state
+          throw_completed = false;
+          substate[THROW] = THROW_AIM;
+          command = wheel::thrower(0);
+          serial_write(command);
+          // Stop the robot
+          command = wheel::stop();
+          serial_write(command);
+
+          // Update the substate
+          set_substate(THROW, THROW_AIM);
+          set_state(SEARCH_BALL);
+        }
+      }
+
       break;
 
     default:
       /* Should never get here, ERROR! */
       break;
+      
   }
+}
+
+void StateMachine::complete_throw(const ros::TimerEvent&){
+  throw_completed = true;
+  throwing_timer.stop();
+  throwing_timer.setPeriod(ros::Duration(THROW_TIME));
 }
 
 void StateMachine::serial_write(std::string string){
@@ -86,172 +262,42 @@ void StateMachine::set_stop_signal(bool ref_signal){
   stop_signal = ref_signal;
 }
 
-StateMachine::StateMachine(ros::Publisher& topic) : publisher(topic), command_delay(COMMAND_RATE) {
+void StateMachine::reset_substates(){
+  substate[THROW]         = THROW_AIM;
+  substate[SEARCH_BASKET] = BASKET_ORBIT_BALL;
+}
+
+StateMachine::StateMachine(ros::Publisher& topic, ros::NodeHandle& node) : publisher(topic), command_delay(COMMAND_RATE), ros_node(node) {
   std::cout << "A StateMachine object was created with publisher" << std::endl;
+  throwing_timer = ros_node.createTimer(ros::Duration(THROW_TIME), &StateMachine::complete_throw, this, true);
+  throwing_timer.stop();
+  throwing_timer.setPeriod(ros::Duration(THROW_TIME));
+  reset_substates();
 }
 
-StateMachine::StateMachine() : command_delay(COMMAND_RATE) {
-  std::cout << "A StateMachine object was created without publisher" << std::endl;
+throw_info_t StateMachine::look_up(int distance){
+  return getSpeedForDist(distance);
 }
-
-/**
- * Sign function
- * https://stackoverflow.com/a/4609795
- */
-template <typename T> int sgn(T val) {
-  return (T(0) < val) - (val < T(0));
-}
-
-bool StateMachine::search_for_ball(){
-  // std::cout << "Search for ball: "  << object_in_sight << std::endl;
-  // If the robot hasn't found a ball yet
-  if(!object_in_sight){
-    std::string command = wheel::move(0, 0, SPIN_SEARCH_SPEED);
-    serial_write(command);
-    // std::cout << "hi\n";
-    return false;
-  }
-
-  // If then robot has found a ball, center in on it
-  else{
-    // object_in_sight = false;
-    std::string command = wheel::stop();
-    serial_write(command);
-    return true;
-  }
-}
-
-bool StateMachine::center_on_ball(){
-  // If the ball is not at the center of the frame
-  if(abs(object_position_x - FRAME_WIDTH / 2) > POSITION_ERROR){
-    double angv = SPIN_CENTER_SPEED;
-    if(object_position_x > FRAME_WIDTH / 2){
-      angv *= -1;
-    }
-
-    std::string command = wheel::move(0, 0, angv);
-    serial_write(command);
-    return false;
-  }
-
-  // If the ball is at the center of the frame
-  else{
-    std::string command = wheel::stop();
-    serial_write(command);
-    return true;
-  }
-}
-
-
-bool StateMachine::goto_ball(){
-  // If the ball is not in front of the robot
-  if((object_position_y < BALL_IN_FRONT)){
-    // In case the ball moves out of the pos error range then rotate a little bit
-    double angv = 0;
-    if(abs(object_position_x - FRAME_WIDTH / 2) > POSITION_ERROR){
-      angv += SPIN_SEARCH_SPEED / 1.4;
-      if(object_position_x > FRAME_WIDTH / 2){
-        angv *= -1;
-      }
-    }
-    
-    std::string command = wheel::move(MOVING_SPEED, 90, angv);
-    serial_write(command);
-
-    return false;
-  }
-
-  // The ball is in front of the robot
-  else{
-    std::string command = wheel::stop();
-    serial_write(command);
-    return true;
-  }
-}
-
-bool StateMachine::search_for_basket(){
-  // The basket and the ball are not in the center of the frame
-  std::string command;
-  bool ret = false;
-  std::cout << basket_state << std::endl;
-
-  if(basket_state == ORBIT_BALL){
-    if(abs(basket_position_x - FRAME_WIDTH / 2) < POSITION_ERROR * 5 ) {
-      // command = wheel::stop();
-      // ret = true;
-      // basket_state = ORBIT_BALL;
-      basket_state = CENTER_BASKET;
-    }
-
-
-    command = wheel::move(ORBIT_SPEED, 180, -(object_position_x - FRAME_WIDTH / 2) * 0.03);
-
-  }else if(basket_state == CENTER_BASKET){
-    if(abs(basket_position_x - FRAME_WIDTH / 2) < POSITION_ERROR) basket_state = ORBIT_BASKET;
-
-    double angv = SPIN_CENTER_SPEED * 1.4;
-    if(basket_position_x > FRAME_WIDTH / 2){
-      angv *= -1;
-    }
-
-    command = wheel::move(0, 0, angv);
-
-  }else if(basket_state == ORBIT_BASKET){
-    int16_t sign = 1;
-    if(basket_position_x > FRAME_WIDTH / 2){
-      sign *= -1;
-    }
-
-    int16_t dir = 0;
-    if((object_position_x - FRAME_WIDTH / 2) < 0) dir = 180;
-
-    command = wheel::move(ORBIT_SPEED * 0.7, dir, -(basket_position_x - FRAME_WIDTH / 2) * 0.02);
-
-    if(abs(object_position_x - FRAME_WIDTH / 2) < POSITION_ERROR){
-      command = wheel::stop();
-      ret = true;
-      basket_state = ORBIT_BALL;
-    }
-  }
-
-  serial_write(command);
-  return ret;
-}
-
-bool StateMachine::throw_the_ball(){
-  // The ball is not thrown yet but we are getting close!
-  if(true /* Placeholder */){
-    // Thrower motor control
-    std::string command = wheel::thrower(THROWER_SPEED);
-    serial_write(command);
-
-    // Wheel control
-    command = wheel::move(MOVING_SPEED_THROW, 90, 0);
-    serial_write(command);
-    return false;
-  }
-
-  // The ball has been thrown
-  else{
-    // Thrower motor control
-    std::string command = wheel::thrower_stop();
-    serial_write(command);
-
-    // Wheel control
-    command = wheel::stop();
-    serial_write(command);
-  }
-}
-
 
 state_t StateMachine::get_state(){
   return state;
 }
 
+substate_t StateMachine::get_substate(state_t superstate){
+  return substate[superstate];
+}
+
+void StateMachine::set_state(state_t superstate){
+  state = superstate;
+}
+
+void StateMachine::set_substate(state_t superstate, substate_t new_substate){
+  substate[superstate] = new_substate;
+}
 
 void StateMachine::update_ball_position(int16_t x, int16_t y, uint16_t width, uint16_t height){
-  object_position_x = x;
-  object_position_y = y;
+  ball_position_x = x;
+  ball_position_y = y;
 }
 
 void StateMachine::update_basket_position(int16_t x, int16_t y, uint16_t width, uint16_t height){
@@ -259,14 +305,12 @@ void StateMachine::update_basket_position(int16_t x, int16_t y, uint16_t width, 
   basket_position_y = y;
 }
 
-void StateMachine::set_object_in_sight(bool in_sight){
-  object_in_sight = in_sight;
-  // std::cout << "Function called\n";
-  // std::cout << "Obj in sight: " << object_in_sight << std::endl;
+void StateMachine::set_basket_dist(int dist){
+  basket_dist = dist;
 }
 
-void StateMachine::set_basket_in_sight(bool in_sight){
-  basket_in_sight = in_sight;
+void StateMachine::reset_internal_variables(){
+  throw_completed = false;
 }
 
 void StateMachine::reset_machine(){
@@ -279,6 +323,30 @@ void StateMachine::stop_machine(){
 
 void StateMachine::start_machine(){
   stop_signal = false;
+  pause_signal = false;
+}
+
+void StateMachine::pause_machine(){
+  pause_signal = true;
+}
+
+void StateMachine::set_throw_power(uint16_t power) {
+  std::string command = wheel::thrower(power);
+  serial_write(command);
+}
+void StateMachine::set_aimer_position(uint16_t angle) {
+  std::string command = wheel::aim(angle);
+  serial_write(command);
+}
+
+void StateMachine::configure_thrower(throw_info_t& throw_parameters){
+  set_throw_power(throw_parameters.dist);
+  set_aimer_position(throw_parameters.angle);
+}
+
+void StateMachine::deaim(){
+  serial_write(wheel::thrower_stop());
+  serial_write(wheel::aim(1000));
 }
 
 bool StateMachine::searching_for_ball(){

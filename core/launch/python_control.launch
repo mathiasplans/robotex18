@@ -1,0 +1,8 @@
+<launch>
+    <!-- <include file = "$(find rosbridge_server)/launch/rosbridge_websocket.launch"/> -->
+    <include file = "$(find serial)/launch/serial.launch"/>
+    <include file = "$(find vision)/launch/realsense.launch"/>
+    <!-- <node pkg="web_video_server" name="web" type="web_video_server" output="screen"/> -->
+        <!-- <include file="/home/robot/catkin_ws/src/rosbridge_server/launch/rosbridge_websocket.launch"/> -->
+    <include file = "$(find localization)/launch/localization.launch"/>
+</launch>
