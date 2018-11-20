@@ -220,7 +220,7 @@ public:
    * Set the variables before the throwing commences
    */
   void configure_thrower(
-    throw_info_t& throw_parameters  ///< Struct which contains the aimer arc and thrower power
+    const throw_info_t& throw_parameters  ///< Struct which contains the aimer arc and thrower power
   );
 
   /**

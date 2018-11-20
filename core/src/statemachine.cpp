@@ -136,11 +136,11 @@ void StateMachine::state_machine(void){
         configure_thrower(look_up(basket_dist));
 
         // Update the substate
-        set_substate(THROW, THROW_GOAL)
+        set_substate(THROW, THROW_GOAL);
 
       }else if(substate[THROW] == THROW_GOAL){
         // Move towards the basket
-        std::string command = wheel::move(throwing_direction*MOVING_SPEED_THROW, 90, 0);
+        std::string command = wheel::move(MOVING_SPEED_THROW, 90, 0);
         serial_write(command);
 
         // If ball is out of sight (very near the thrower)
@@ -282,7 +282,7 @@ void StateMachine::set_aimer_position(uint16_t angle) {
   serial_write(command);
 }
 
-void StateMachine::configure_thrower(throw_info_t& throw_parameters){
+void StateMachine::configure_thrower(const throw_info_t& throw_parameters){
   set_throw_power(throw_parameters.dist);
   set_aimer_position(throw_parameters.angle);
 }
@@ -290,8 +290,4 @@ void StateMachine::configure_thrower(throw_info_t& throw_parameters){
 void StateMachine::deaim(){
   serial_write(wheel::thrower_stop());
   serial_write(wheel::aim(1000));
-}
-
-bool StateMachine::searching_for_ball(){
-  return searching_ball;
 }
