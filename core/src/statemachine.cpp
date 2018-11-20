@@ -73,27 +73,6 @@ void StateMachine::state_machine(void){
 
       break;
 
-    case CENTER_ON_BALL:
-      // If the ball is not at the center of the frame
-      if(abs(ball_position_x - FRAME_WIDTH / 2) > POSITION_ERROR){
-        double angv = SPIN_CENTER_SPEED;
-        if(ball_position_x > FRAME_WIDTH / 2){
-          angv *= -1;
-        }
-
-        command = wheel::move(0, 0, angv);
-        serial_write(command);
-      }
-
-      // If the ball is at the center of the frame
-      else{
-        command = wheel::stop();
-        serial_write(command);
-        set_state(MOVE_TO_BALL);
-      }
-
-      break;
-
     case MOVE_TO_BALL:
       // If the ball is not in front of the robot
       if((ball_position_y < BALL_IN_FRONT)){
@@ -121,68 +100,33 @@ void StateMachine::state_machine(void){
       break;
 
     case SEARCH_BASKET:
-      // The robot orbits the ball while searching for basket
-      if(substate[SEARCH_BASKET] == BASKET_ORBIT_BALL){
-        // If basket is sufficently in center
-        if(abs(basket_position_x - FRAME_WIDTH / 2) < POSITION_ERROR) {
-          command = wheel::stop();
-          serial_write(command);
+      // If basket is sufficently in center
+      if(abs(basket_position_x - FRAME_WIDTH / 2) < POSITION_ERROR) {
+        command = wheel::stop();
+        serial_write(command);
 
-          set_substate(SEARCH_BASKET, BASKET_ORBIT_BASKET);
-          set_state(THROW);
-        }
-
-        // If basket is just in sight
-        if(basket_position_x < 0){
-          // Added (int) conversion, not sure if correct. TODO
-          // Calculate the orbiting speed, gets more slower the more the basket approaches the center. Minimum value is 15
-          int sideways = std::max((int) abs((basket_position_x - FRAME_WIDTH / 2) * 0.09), 15);
-
-          // Calculates the direction of the orbit.
-          int dir = sgn(basket_position_x - FRAME_WIDTH / 2) == -1 ? 0 : 180;
-
-          // Compiles the command for orbiting the ball
-          command = wheel::move(sideways , dir, sgn(basket_position_x - FRAME_WIDTH / 2) * (ball_position_x - FRAME_WIDTH / 2) * 0.005);
-          serial_write(command);
-        }
-
-        // If basket is not in sight
-        else{
-          // Orbit aimlessly
-          command = wheel::move(ORBIT_SPEED, 0, -(ball_position_x - FRAME_WIDTH / 2) * 0.005);
-        }
-
-      // The robot
-      }else if(substate[SEARCH_BASKET] == BASKET_CENTER_BASKET){
-        if(abs(basket_position_x - FRAME_WIDTH / 2) < POSITION_ERROR){
-          set_substate(SEARCH_BASKET, BASKET_ORBIT_BASKET);
-        }
-
-        double angv = SPIN_CENTER_SPEED * 1.4;
-        if(basket_position_x > FRAME_WIDTH / 2){
-          angv *= -1;
-        }
-
-        command = wheel::move(0, 0, angv);
-
-      //
-      }else if(substate[SEARCH_BASKET] == BASKET_ORBIT_BASKET){
-        // Calculates the direction of the orbit.
-        int dir = sgn(ball_position_x - FRAME_WIDTH / 2) == -1 ? 0 : 180;
-
-        // Compile the command
-        command = wheel::move(ORBIT_SPEED * 0.7, dir, -(basket_position_x - FRAME_WIDTH / 2) * 0.02);
-
-        // Orbit the basket til both basket and ball are suffiently in the middle of frame
-        if(abs(ball_position_x - FRAME_WIDTH / 2) < POSITION_ERROR){
-          command = wheel::stop();
-          serial_write(command);
-
-          set_substate(SEARCH_BASKET, BASKET_ORBIT_BALL);
-          set_state(THROW);
-        }
+        set_state(THROW);
       }
 
+      // If basket is just in sight
+      if(basket_position_x < 0){
+        // Added (int) conversion, not sure if correct. TODO
+        // Calculate the orbiting speed, gets more slower the more the basket approaches the center. Minimum value is 15
+        int sideways = std::max((int) abs((basket_position_x - FRAME_WIDTH / 2) * 0.09), 15);
+
+        // Calculates the direction of the orbit.
+        int dir = sgn(basket_position_x - FRAME_WIDTH / 2) == -1 ? 0 : 180;
+
+        // Compiles the command for orbiting the ball
+        command = wheel::move(sideways , dir, sgn(basket_position_x - FRAME_WIDTH / 2) * (ball_position_x - FRAME_WIDTH / 2) * 0.005);
+        serial_write(command);
+      }
+
+      // If basket is not in sight
+      else{
+        // Orbit aimlessly
+        command = wheel::move(ORBIT_SPEED, 0, -(ball_position_x - FRAME_WIDTH / 2) * 0.005);
+      }
       break;
 
     case THROW:
@@ -236,7 +180,7 @@ void StateMachine::state_machine(void){
     default:
       /* Should never get here, ERROR! */
       break;
-      
+
   }
 }
 
@@ -264,7 +208,6 @@ void StateMachine::set_stop_signal(bool ref_signal){
 
 void StateMachine::reset_substates(){
   substate[THROW]         = THROW_AIM;
-  substate[SEARCH_BASKET] = BASKET_ORBIT_BALL;
 }
 
 StateMachine::StateMachine(ros::Publisher& topic, ros::NodeHandle& node) : publisher(topic), command_delay(COMMAND_RATE), ros_node(node) {

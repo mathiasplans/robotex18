@@ -87,7 +87,7 @@ int main(int argc, char **argv){
   cinfd[0].events = POLLIN;
 
   while(ros::ok()){
-    //handle_debug_command(sm, cinfd);
+    handle_debug_command(sm, cinfd);
 
     // Run the State Machine once
     sm.state_machine();

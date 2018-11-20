@@ -13,7 +13,6 @@
 typedef enum{
   IDLE,              ///< The robot is idle, it doesn't do anything but tries to start searching for ball
   SEARCH_BALL,       ///< The robot is searching for balls
-  CENTER_ON_BALL,    ///< Once the robot has found a suitable ball, center on it so it is in the middle of the camera's frame
   MOVE_TO_BALL,      ///< Once the ball is in the middle of the frame (Doesn't have to be if aproaching from an angle), move up to it
   SEARCH_BASKET,     ///< If the ball is sufficently close, search for the basket while keeping the ball in front of the robot
   THROW,             ///< Once the ball and the baslet are in the middle of the camera's frame, throw the ball to the basket
@@ -24,9 +23,6 @@ typedef enum{
  * Sub-states for states in state_t
  */
 typedef enum{
-  BASKET_ORBIT_BALL,     ///< The robot orbits the ball until the basket is in sight
-  BASKET_CENTER_BASKET,  ///< The robot adjusts it's position til the basket is in the middle of a frame
-  BASKET_ORBIT_BASKET,   ///< The robot orbits the basket until the ball is in the middle of the frame
   THROW_AIM,             ///< Robot aims the thrower and get's the best throwing power
   THROW_GOAL,            ///< Robot moves forward and throws the ball
   THROW_GOAL_NO_BALL     ///< Robot throws the ball even if ball is not in sight. Usually,
