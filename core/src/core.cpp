@@ -18,13 +18,6 @@
  * Handles the message from vision package
  */
 void vision_callback_ball(const vision::Ball::ConstPtr& msg, StateMachine& sm){
-  if(msg->ballX < 0) {
-    if(sm.get_state() != THROW && sm.get_state() != SEARCH_BALL && sm.get_state() != IDLE) {
-      std::cout << "RESETTING state: " << sm.get_state()  << "\n";
-      sm.reset_machine();
-    }
-  }
-
   sm.update_ball_position(msg->ballX, msg->ballY, msg->width, msg->height);
 }
 

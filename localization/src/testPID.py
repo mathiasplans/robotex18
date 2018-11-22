@@ -15,6 +15,7 @@ from motor_movement import slippage
 comm = Communication()
 
 err = []
+last_best = 1000000
 is_measuring = False
 
 def callback(data):
@@ -36,8 +37,8 @@ tests = []
 batch_tests = []
 results = defaultdict(list)
 
-cur = [(512, 512, 512)]
-learning_rate = 256 # lower learning rate 4 times after each batch
+cur = [(768, 768, 256), (640, 128, 128)]
+learning_rate = 64 # lower learning rate 4 times after each batch
 
 # 10 sec per combination
 # 4 values per learning rate
@@ -47,11 +48,19 @@ learning_rate = 256 # lower learning rate 4 times after each batch
 # => 40 minutes
 # ==> need saving of state
 
-def get_batch_tests(last_bests=[(512, 512, 512)], learning_rate=256):
-    "Returns all of the tests of the current batch"
-    bottom_tests = [tuple(map(lambda x: x/learning_rate/2, last_best)) for last_best in last_bests]
+#  (768, 768, 256), (640, 128, 128)
+# (832, 832, 128), (704, 640, 128)
+# (768, 768, 64), (864, 768, 64)
+# (872, 776, 72)
+#(864, 768, 64), (864, 780, 64)
+# (832, 748, 80), (832, 796, 80), (832, 780, 64), (880, 748, 32)
 
-    changes = [ change for change in range(learning_rate, learning_rate*4, learning_rate) for _ in range(2)]
+
+def get_batch_tests(last_bests=[(513, 512, 512)], learning_rate=256):
+    "Returns all of the tests of the current batch"
+    bottom_tests = [tuple(map(lambda x: x-(2*learning_rate), last_best)) for last_best in last_bests]
+
+    changes = [ change for change in range(learning_rate, learning_rate*4, learning_rate) for _ in range(6)]
 
     def make_change(t, selector, x):
         l = list(t)
@@ -68,13 +77,14 @@ def get_batch_tests(last_bests=[(512, 512, 512)], learning_rate=256):
 
 
     return all_tests
-    # return [(1, 257, 1), (1, 257, 1)]
+    #return [(768, 768, 64), (768, 768, 64), (864, 768, 64), (864, 768, 64)]
 
 
 def next_batch():
     global cur, tests, batch_tests
 
-    batch_tests = get_batch_tests(cur, learning_rate)
+    # batch_tests = get_batch_tests(cur, learning_rate)
+    batch_tests = [(352, 268, 64), (352, 268, 64), (352, 100, 64), (352, 100, 64), (352, 258, 64), (352, 258, 64)]
     
     tests = batch_tests[:]
     # start testing
@@ -85,7 +95,7 @@ def finish_batch():
     # choose least err
     sorted_results = sorted(batch_tests, key=lambda test: np.sum(np.sum(results[test])))
     # cur = min(batch_tests, key=lambda test: np.mean(np.sum(results[test])))
-    cur = sorted_results[:2]
+    cur = sorted_results[:4:2]
     print("least err: ", cur)
     print("results: ", results)
     results = defaultdict(list)
@@ -120,12 +130,17 @@ def test_constants(p, i, d):
     move_forward(next_dir())
 
 def stop_func(_):
-    global err, is_measuring
+    global err, is_measuring, last_best
     err = err[1:]
     is_measuring = False
+    sum_err = sum(err)
     print("finished test: ", cur)
-    print("sum err: ", sum(err))
+    print("sum err: ", sum_err)
+    print("worse than best: ", sum_err - last_best)
+    if (sum_err - last_best < 0):
+        last_best = sum_err
     comm.set_motor([[0],[0],[0]])
+    
 
     results[cur].append(err)
     err = []

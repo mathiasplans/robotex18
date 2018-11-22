@@ -102,7 +102,8 @@ void command_handler(const core::Command::ConstPtr& msg){
 int serial_port;
 
 void write_cmd(std::string cmd) {
-  std::string write_string = cmd + "\r\n";
+  std::string write_string = cmd;
+  std::cout << write_string;
   write(serial_port, write_string.c_str(), write_string.size());
 }
 
@@ -279,7 +280,7 @@ int main(int argc, char **argv){
 
         // Received message is unknown
         else {
-          std::cout << "Received serial message was not a known command :" << std::endl << "\t" << message << std::endl;
+          //std::cout << "Received serial message was not a known command :" << std::endl << "\t" << message << std::endl;
           continue;
         }
 

@@ -39,7 +39,7 @@ typedef enum{
 class StateMachine{
 private:
   /* Machine control */
-  bool stop_signal = false;    ///< If set, the robot will be set to and can not exit the IDLE state
+  bool stop_signal = true;    ///< If set, the robot will be set to and can not exit the IDLE state
   bool reset_signal = false;  ///< If set, the robot will be set to the IDLE state
   bool pause_signal = false;  ///< If set, the robot will be paused, state and substate won't be affected
 
@@ -232,17 +232,17 @@ public:
    * Update the position of the sought out object
    */
   void update_ball_position(
-    int16_t x,       ///< X coordinates of the object
-    int16_t y,       ///< Y coordinates of the object
-    uint16_t width,  ///< Width of the camera's frame
-    uint16_t height  ///< Height of the camera's frame
+    int x,       ///< X coordinates of the object
+    int y,       ///< Y coordinates of the object
+    int width,  ///< Width of the camera's frame
+    int height  ///< Height of the camera's frame
   );
 
   void update_basket_position(
-    int16_t x,       ///< X coordinates of the object
-    int16_t y,       ///< Y coordinates of the object
-    uint16_t width,  ///< Width of the camera's frame
-    uint16_t height  ///< Height of the camera's frame
+    int x,       ///< X coordinates of the object
+    int y,       ///< Y coordinates of the object
+    int width,  ///< Width of the camera's frame
+    int height  ///< Height of the camera's frame
   );
 
   void set_basket_dist(
