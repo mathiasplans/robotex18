@@ -34,3 +34,10 @@ build
 
 # ssh key
 robot_bridge.pem
+
+# Swap files
+*.swp
+
+# IDE generated folders
+localization/src/.idea
+.vscode
