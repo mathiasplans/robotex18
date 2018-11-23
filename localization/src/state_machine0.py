@@ -6,6 +6,7 @@ from __future__ import print_function
 import smach
 import rospy
 
+
 class Foo(smach.State):
     def __init__(self, outcomes=['o1', 'o2']):
         smach.State.__init__(self, outcomes)
@@ -18,6 +19,7 @@ class Foo(smach.State):
         else:
             return 'o2'
 
+
 class Bar(smach.State):
     def __init__(self, outcomes=['o2']):
         smach.State.__init__(self, outcomes)
@@ -26,18 +28,19 @@ class Bar(smach.State):
         rospy.loginfo('Executing state BAR')
         return 'o2'
 
+
 if __name__ == '__main__':
     rospy.init_node('state_machine0')
 
-    sm = smach.StateMachine(outcomes = ['outcome4', 'outcome5'])
+    sm = smach.StateMachine(outcomes=['outcome4', 'outcome5'])
 
     with sm:
         smach.StateMachine.add('FOO', Foo(), transitions={
-            'o1':'BAR',
-            'o2':'outcome4'
+            'o1': 'BAR',
+            'o2': 'outcome4'
         })
         smach.StateMachine.add('BAR', Bar(), transitions={
-            'o2':'FOO'
+            'o2': 'FOO'
         })
 
         outcome = sm.execute()

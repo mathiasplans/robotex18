@@ -5,7 +5,7 @@ from motor_movement import to_motor, to_eucl
 from core.msg import Command
 
 class Communication(object):
-    """Pyhton class for constructing and sending strings for serial"""
+    """Python class for constructing and sending strings for serial"""
     def __init__(self):
         self.pub = rospy.Publisher('commands', Command, queue_size=10)
 
