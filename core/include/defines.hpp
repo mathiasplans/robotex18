@@ -3,13 +3,13 @@
  * TODO: Get camera node to use these for configuration
  * Note: Maybe use a camera driver such as http://wiki.ros.org/libuvc_camera, then camera conf is done through a launch file. Can use these there.
  */
-#define FRAME_HEIGHT          1280
-#define FRAME_WIDTH           720
+#define FRAME_HEIGHT          640
+#define FRAME_WIDTH           480
 
 /**
  * Spinning speed when searching for a ball/basket
  */
-#define SPIN_SEARCH_SPEED     0.8
+#define SPIN_SEARCH_SPEED     1.8
 
 /**
  * Spinning speed when centering on a ball
@@ -19,7 +19,7 @@
 /**
  * Moving speed when moving around the arena
  */
-#define MOVING_SPEED          55
+#define MOVING_SPEED          70
 
 /**
  * Moving speed when aproaching a ball when throwing
@@ -29,7 +29,7 @@
 /**
  * Moving speed when orbiting an object
  */
-#define ORBIT_SPEED           30
+#define ORBIT_SPEED           31
 
 /**
  * Position error of an object. That is how many pixels can an object be out of the intended position.
@@ -44,7 +44,7 @@
 /**
  * How close has the ball have to be for the robot to stop
  */
-#define BALL_IN_FRONT         900 /* Height at which the ball is in front of the robot (Y pixels) */
+#define BALL_IN_FRONT         FRAME_HEIGHT / 1.32 /* Height at which the ball is in front of the robot (Y pixels) */
 
 /**
  * How many commands are sent per second

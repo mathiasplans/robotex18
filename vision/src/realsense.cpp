@@ -25,14 +25,13 @@ bool dArr = false;
 bool cArr = false;
 pair<Mat,  int32_t> color;
 pair<Mat,  int32_t> depth;
-int lastx = 0;
-int lasty = 0;
+vector<pair<int, int> > lastBalls;
 Scalar upperBall;
 Scalar lowerBall;
 Scalar upperBasket;
 Scalar lowerBasket;
 output_t output_type = DEF;
-basket_t basket_type = BLUE;
+basket_t basket_type = PINK;
 bool display_contours = false;
 Point mouse(0,0);
 int frameCount = 0;
@@ -60,7 +59,32 @@ void color_callback(const sensor_msgs::ImageConstPtr& ros_frame){
     // cout << 0 << " " << color.second << endl;
 }
 
+bool ball_checker(){
+    int len = lastBalls.size();
+    if(len == 0){
+        return false;
+    }
+
+    pair<int, int> lastBall = lastBalls[len - 1];
+
+    int matching_len = 0;
+
+    for(int i = len - 2; i >= 0; i--){
+        if(abs(lastBalls[i].first - lastBall.first) < 100 && abs(lastBalls[i].second - lastBall.second) < 40){
+            matching_len++;
+        }
+    }
+
+    if(matching_len > 3){
+        return true;
+    }
+
+    return false;
+    
+}
+
 void ball_detection(image_transport::Publisher& pub, ros::Publisher& ballPub){
+    
     Mat frame = color.first;
     Mat dframe = depth.first;
     
@@ -112,16 +136,19 @@ void ball_detection(image_transport::Publisher& pub, ros::Publisher& ballPub){
     vision::Ball ball;
     
     if(largestIndex >= 0){
+
         
+        
+        lastBalls.push_back(pair<int, int>(center[largestIndex].x, center[largestIndex].y));
         // abs(center[largestIndex].x - lastx) < 30 && abs(center[largestIndex].y - lasty) < 30
-        if(true){
+        if(ball_checker()){
             // ROS_INFO("Found %d balls", largestIndex);
             
             ball.ballX = center[largestIndex].x;
             ball.ballY = center[largestIndex].y;
             // TODO: Change these to a constant which the core can read. They are frame width and height.
-            ball.width = 720;
-            ball.height = 1280;
+            ball.width = 480;
+            ball.height = 640;
         }else{
             ball.ballX = -1;
             ball.ballY = -1;
@@ -129,8 +156,9 @@ void ball_detection(image_transport::Publisher& pub, ros::Publisher& ballPub){
             ball.height = -1;
         }
 
-        lastx = center[largestIndex].x;
-        lasty = center[largestIndex].y;
+        if(lastBalls.size() > 6){
+            lastBalls.erase(lastBalls.begin());
+        }
     }else{
         ball.ballX = -1;
         ball.ballY = -1;
@@ -148,9 +176,11 @@ void ball_detection(image_transport::Publisher& pub, ros::Publisher& ballPub){
             out = frame;
             break;
         case MASK:
-            cvtColor(frame, frame, CV_BGR2GRAY);
+            // cvtColor(frame, frame, CV_BGR2GRAY);
+            cvtColor(mask, mask, CV_GRAY2RGB);
             bitwise_and(frame, mask, frame);
-            cvtColor(frame, frame, CV_GRAY2BGR);
+            // bitwise_and(frame, frame, frame);
+            // cvtColor(frame, frame, CV_GRAY2BGR);
             out = frame;
             break;
     }
@@ -162,10 +192,18 @@ void ball_detection(image_transport::Publisher& pub, ros::Publisher& ballPub){
 
     resize(frame, frame, Size(480, 640));
 
+    frame = frame * 3;
+
     sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "rgb8", frame).toImageMsg();
     pub.publish(msg);
 
 }
+
+struct Mod{
+  void operator()(u_char &f, const int *p) const {
+    f % *p;
+  }
+}; 
 
 void basket_detection(image_transport::Publisher& pub, ros::Publisher& basketPub, ros::Publisher& basketRelPub){
     Mat cframe = color.first;
@@ -185,6 +223,21 @@ void basket_detection(image_transport::Publisher& pub, ros::Publisher& basketPub
                     Size(3, 3),
                     Point(1, 1));
     Mat mask;
+
+    
+
+    Mat hue = cframe.clone();
+
+    multiply(hue, Scalar(1, 0, 0), hue);
+
+    // hue += Scalar(30, 0, 0);
+    // // Hacked together modulo operation on mat
+    hue.forEach<u_char>(Mod());
+
+    multiply(cframe, Scalar(0, 1, 1), cframe);
+
+    cframe += hue;
+
 
     inRange(cframe, lowerBasket, upperBasket, mask);
     
@@ -214,7 +267,7 @@ void basket_detection(image_transport::Publisher& pub, ros::Publisher& basketPub
         
         int area = boundRect[i].width * boundRect[i].height;
 
-        // if(area < 40 * 40) continue;
+        if(area < 20 * 40) continue;
 
         if(area > largestArea){
             largestIndex = i;
@@ -233,14 +286,18 @@ void basket_detection(image_transport::Publisher& pub, ros::Publisher& basketPub
             out = cframe;
             break;
         case MASK:
-            cvtColor(cframe, cframe, CV_RGB2GRAY);
+            // cvtColor(cframe, cframe, CV_RGB2GRAY);
+            // bitwise_and(cframe, mask, cframe);
+            // cvtColor(cframe, cframe, CV_GRAY2RGB);
+            cvtColor(mask, mask, CV_GRAY2RGB);
             bitwise_and(cframe, mask, cframe);
-            cvtColor(cframe, cframe, CV_GRAY2RGB);
             out = cframe;
             break;
     }
 
     vision::Ball ball;
+
+    int depth;
 
     if(largestIndex >= 0){
         Rect r = boundRect[largestIndex];
@@ -251,7 +308,7 @@ void basket_detection(image_transport::Publisher& pub, ros::Publisher& basketPub
             sum += vals[i];
         }
         // putText(out, to_string(a), Point(mouse.x + 5, mouse.y + 5), FONT_HERSHEY_SIMPLEX, 1, Scalar(0,0,0), 2); // Mouse testing
-        int depth = sum/vals.size();
+        depth = sum/vals.size();
 
         
         vision::BasketRelative basket;
@@ -264,7 +321,7 @@ void basket_detection(image_transport::Publisher& pub, ros::Publisher& basketPub
         rectangle(out, r.tl(), r.br(), Scalar(0,0,255), 1, 8, 0); // Mouse testing
     }
     
-    if(largestIndex >= 0){
+    if(largestIndex >= 0 && depth < 4200){
         Rect r = boundRect[largestIndex];
 
         
@@ -281,9 +338,9 @@ void basket_detection(image_transport::Publisher& pub, ros::Publisher& basketPub
     }
 
     basketPub.publish(ball);
-
+    cframe = cframe * 3;
     
-    resize(cframe, cframe, Size(360, 640));
+    resize(cframe, cframe, Size(480, 640));
 
     sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "rgb8", cframe).toImageMsg();
     pub.publish(msg);
@@ -341,6 +398,8 @@ void basket_type_callback(const std_msgs::String::ConstPtr& t, ros::Publisher& p
         return;
     }
 
+    init_thresholds();
+
     vision::Threshold th;
 
     th.hh = upperBasket[0];
@@ -352,7 +411,7 @@ void basket_type_callback(const std_msgs::String::ConstPtr& t, ros::Publisher& p
 
     pub.publish(th);
 
-    init_thresholds();
+    
 }
 
 double polsby_doppler(std::vector<cv::Point>& contour){
@@ -375,7 +434,7 @@ uint16_t avg(Mat& depths, Rect bounding){
     
     for (int x = tl.x + 10; x <= br.x - 10; x++){
         for(int y = tl.y + 10; y <= br.y - 10; y++){
-            uint16_t val = depths.at<uint16_t>(720 - x, y );
+            uint16_t val = depths.at<uint16_t>(480 - x, y );
             if(val > 100){
                 sum += val;
                 count++;

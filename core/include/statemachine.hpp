@@ -13,7 +13,6 @@
 typedef enum{
   IDLE,              ///< The robot is idle, it doesn't do anything but tries to start searching for ball
   SEARCH_BALL,       ///< The robot is searching for balls
-  CENTER_ON_BALL,    ///< Once the robot has found a suitable ball, center on it so it is in the middle of the camera's frame
   MOVE_TO_BALL,      ///< Once the ball is in the middle of the frame (Doesn't have to be if aproaching from an angle), move up to it
   SEARCH_BASKET,     ///< If the ball is sufficently close, search for the basket while keeping the ball in front of the robot
   THROW,             ///< Once the ball and the baslet are in the middle of the camera's frame, throw the ball to the basket
@@ -24,9 +23,6 @@ typedef enum{
  * Sub-states for states in state_t
  */
 typedef enum{
-  BASKET_ORBIT_BALL,     ///< The robot orbits the ball until the basket is in sight
-  BASKET_CENTER_BASKET,  ///< The robot adjusts it's position til the basket is in the middle of a frame
-  BASKET_ORBIT_BASKET,   ///< The robot orbits the basket until the ball is in the middle of the frame
   THROW_AIM,             ///< Robot aims the thrower and get's the best throwing power
   THROW_GOAL,            ///< Robot moves forward and throws the ball
   THROW_GOAL_NO_BALL     ///< Robot throws the ball even if ball is not in sight. Usually,
@@ -43,21 +39,17 @@ typedef enum{
 class StateMachine{
 private:
   /* Machine control */
-  bool stop_signal = false;    ///< If set, the robot will be set to and can not exit the IDLE state
+  bool stop_signal = true;    ///< If set, the robot will be set to and can not exit the IDLE state
   bool reset_signal = false;  ///< If set, the robot will be set to the IDLE state
   bool pause_signal = false;  ///< If set, the robot will be paused, state and substate won't be affected
 
   /* Internal variables for calculatng the position of the robot, basket, or balls */
-  float object_position_x;  ///< X coordinates of the object
-  float object_position_y;  ///< Y coordinates of the object
+  float ball_position_x;  ///< X coordinates of the ball
+  float ball_position_y;  ///< Y coordinates of the ball
   float basket_position_x;  ///< X coordinates of the basket
   float basket_position_y;  ///< Y coordinates of the basket
 
   /* Variables which determine the decisions of the robot */
-  bool object_in_sight = false;  ///< True if any objects are in sight
-  bool basket_in_sight = false;  ///< True if a basket is in sight
-  bool basket_found = false;     ///< True if basket has been found
-  bool ball_in_sight = false;    ///< True if a ball is in sight
   bool throw_completed = false;  ///< True if a throw was a success
 
   /* Aiming variables */
@@ -75,16 +67,6 @@ private:
   ros::Rate command_delay;     ///< Delay between sending the commands
   ros::NodeHandle& ros_node;   ///< Reference to ROS Node Handle object
   ros::Timer throwing_timer;   ///< Timer for throwing with no ball in frame
-  ros::Timer debug_timer;      ///< Timer for debugging and developing
-
-  /* Misc variables */
-  bool searching_ball = true;  ///< True if robot requires information about ball position
-
-  /* Developement variables */
-  bool lookuptable_mode = false;  ///< If this is true, the robot is in a special mode where filling the lookup table is easier
-  int8_t throwing_direction = 1;  ///< If this variable is 1, the robot goes forward when throwing
-                                  ///< If this variable is -1, the robot goes backward when throwing
-                                  ///< This is used for filling the lookup table
 
   /* Internal state functions */
   /**
@@ -96,11 +78,6 @@ private:
    * It is vital that after reading the throw_completed, it should be reset back to false
    */
   void complete_throw(const ros::TimerEvent&);
-
-  /**
-   * A timer for debugging and developement purposes
-   */
-  void debug_timer_handler(const ros::TimerEvent&);
 
   /* Communication functions */
   /**
@@ -114,7 +91,7 @@ private:
   /**
    * Looks up the thrower configuration according to the distace from lookup table
    */
-  throw_info look_up(
+  throw_info_t look_up(
     int distance  ///< Distance between a ball and a basket
   );
 
@@ -240,15 +217,10 @@ public:
   );
 
   /**
-   * Enables/Disables lookup table mode
-   */
-  void toggle_lookuptable_generation();
-
-  /**
    * Set the variables before the throwing commences
    */
   void configure_thrower(
-    const throw_info& throw_parameters  ///< Struct which contains the aimer arc and thrower power (.aim and .thrower)
+    const throw_info_t& throw_parameters  ///< Struct which contains the aimer arc and thrower power
   );
 
   /**
@@ -260,38 +232,22 @@ public:
    * Update the position of the sought out object
    */
   void update_ball_position(
-    int16_t x,       ///< X coordinates of the object
-    int16_t y,       ///< Y coordinates of the object
-    uint16_t width,  ///< Width of the camera's frame
-    uint16_t height  ///< Height of the camera's frame
+    int x,       ///< X coordinates of the object
+    int y,       ///< Y coordinates of the object
+    int width,  ///< Width of the camera's frame
+    int height  ///< Height of the camera's frame
   );
 
   void update_basket_position(
-    int16_t x,       ///< X coordinates of the object
-    int16_t y,       ///< Y coordinates of the object
-    uint16_t width,  ///< Width of the camera's frame
-    uint16_t height  ///< Height of the camera's frame
-  );
-
-  /**
-   * Lets the State Machine know if any objects are in sight (Balls, baskets, etc.)
-   */
-  void set_object_in_sight(
-    bool in_sight  ///< True if something is in sight
-  );
-
-  void set_basket_in_sight(
-    bool in_sight  ///< True if something is in sight
+    int x,       ///< X coordinates of the object
+    int y,       ///< Y coordinates of the object
+    int width,  ///< Width of the camera's frame
+    int height  ///< Height of the camera's frame
   );
 
   void set_basket_dist(
     int dist
   );
-
-  /**
-   * Returns true if searching for a ball, false if searching for a basket.
-   */
-  bool searching_for_ball();
 
   /**
    * Setter for stop signal.

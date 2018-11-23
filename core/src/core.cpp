@@ -1,5 +1,6 @@
 #include "ros/ros.h"
 #include "vision/Ball.h"
+#include "vision/BasketRelative.h"
 #include "serial/Ref.h"
 #include "core/Command.h"
 #include <boost/bind.hpp>
@@ -16,30 +17,20 @@
 /**
  * Handles the message from vision package
  */
-void vision_callback(const vision::Ball::ConstPtr& msg, StateMachine& sm){
-  if(msg->ballX < 0) {
-    if(sm.get_state() != THROW && sm.get_state() != SEARCH_BALL && sm.get_state() != IDLE) {
-      std::cout << "RESETTING state: " << sm.get_state()  << "\n";
-      sm.reset_machine();
-    }
-  }else{
-    // std::cout << "Found a ball!" << std::endl;
-    sm.update_ball_position(msg->ballX, msg->ballY, msg->width, msg->height);
-    sm.set_object_in_sight(true);
-  }
+void vision_callback_ball(const vision::Ball::ConstPtr& msg, StateMachine& sm){
+  sm.update_ball_position(msg->ballX, msg->ballY, msg->width, msg->height);
 }
 
-void vision_callback2(const vision::Ball::ConstPtr& msg, StateMachine& sm){
-  // ROS_INFO("I heard: [%d, %d]", msg->ballX, msg->ballY);
+void vision_callback_basket(const vision::Ball::ConstPtr& msg, StateMachine& sm){
+  sm.update_basket_position(msg->ballX, msg->ballY, msg->width, msg->height);
+}
 
-  if(msg->ballX < 0) {
-    sm.set_basket_in_sight(false);
-    // s.reset_machine();
+void basket_depth_callback(const vision::BasketRelative::ConstPtr& msg, StateMachine& sm) {
+  if(msg->depth > 10000){
+    // sm.set_basket_dist(-1);
   }else{
-    sm.update_basket_position(msg->ballX, msg->ballY, msg->width, msg->height);
-    sm.set_basket_in_sight(true);
+    sm.set_basket_dist(msg->depth);
   }
-
 }
 
 /**
@@ -67,9 +58,11 @@ int main(int argc, char **argv){
   StateMachine sm = StateMachine(command_topic_out, n);
 
   // Subscribe to a message from vision
-  ros::Subscriber image_processor = n.subscribe<vision::Ball>("ball", 1000, boost::bind(vision_callback, _1, boost::ref(sm)));
+  ros::Subscriber image_processor = n.subscribe<vision::Ball>("ball", 1000, boost::bind(vision_callback_ball, _1, boost::ref(sm)));
 
-  ros::Subscriber basket_sub = n.subscribe<vision::Ball>("basket", 1000, boost::bind(vision_callback2, _1, boost::ref(sm)));
+  ros::Subscriber basket_sub = n.subscribe<vision::Ball>("basket", 1000, boost::bind(vision_callback_basket, _1, boost::ref(sm)));
+
+  ros::Subscriber basket_depth = n.subscribe<vision::BasketRelative>("basketrelative", 1000, boost::bind(basket_depth_callback, _1, boost::ref(sm)));
 
   // Subscribe to a message from serial
   ros::Subscriber referee_signal = n.subscribe<serial::Ref>("referee_signals", 1000, boost::bind(referee_handler, _1, boost::ref(sm)));
@@ -87,7 +80,7 @@ int main(int argc, char **argv){
   cinfd[0].events = POLLIN;
 
   while(ros::ok()){
-    //handle_debug_command(sm, cinfd);
+    handle_debug_command(sm, cinfd);
 
     // Run the State Machine once
     sm.state_machine();

@@ -52,7 +52,6 @@ void handle_debug_command(StateMachine& sm, pollfd* cinfd){
       std::cout << "Switching to state: " << state_string << std::endl;
       if(state_string == "IDLE") sm.set_state(IDLE);
       else if(state_string == "SEARCH_BALL") sm.set_state(SEARCH_BALL);
-      else if(state_string == "CENTER_ON_BALL") sm.set_state(CENTER_ON_BALL);
       else if(state_string == "MOVE_TO_BALL") sm.set_state(MOVE_TO_BALL);
       else if(state_string == "SEARCH_BASKET") sm.set_state(SEARCH_BASKET);
       else if(state_string == "THROW") sm.set_state(THROW);
@@ -63,10 +62,7 @@ void handle_debug_command(StateMachine& sm, pollfd* cinfd){
       std::string substate_string = split(input_command)[2];
 
       std::cout << "Swithcing to substate: " << substate_string << std::endl;
-      if(substate_string == "BASKET_ORBIT_BALL") sm.set_substate(SEARCH_BALL, BASKET_ORBIT_BALL);
-      else if(substate_string == "BASKET_CENTER_BASKET") sm.set_substate(SEARCH_BASKET, BASKET_CENTER_BASKET);
-      else if(substate_string == "BASKET_ORBIT_BASKET") sm.set_substate(SEARCH_BASKET, BASKET_ORBIT_BASKET);
-      else if(substate_string == "THROW_AIM") sm.set_substate(THROW, THROW_AIM);
+      if(substate_string == "THROW_AIM") sm.set_substate(THROW, THROW_AIM);
       else if(substate_string == "THROW_GOAL") sm.set_substate(THROW, THROW_GOAL);
       else if(substate_string == "THROW_GOAL_NO_BALL") sm.set_substate(THROW, THROW_GOAL_NO_BALL);
       else std::cout << "Entered substate is invalid" << std::endl;
@@ -85,10 +81,6 @@ void handle_debug_command(StateMachine& sm, pollfd* cinfd){
       std::string aimer_string = split(input_command)[2];
       sm.set_aimer_position(std::stoi(aimer_string));
       std::cout << "Set the aimer to: " << aimer_string << std::endl;
-    }
-    else if(input_command == std::string("lt")){
-      sm.toggle_lookuptable_generation();
-      std::cout << "Enabled/Disabled the lookup table generation mode";
     }
     else std::cout << "Entered command is invalid" << std::endl;
 
