@@ -44,7 +44,7 @@
 /**
  * How close has the ball have to be for the robot to stop
  */
-#define BALL_IN_FRONT         FRAME_HEIGHT / 1.42 /* Height at which the ball is in front of the robot (Y pixels) */
+#define BALL_IN_FRONT         FRAME_HEIGHT / 1.32 /* Height at which the ball is in front of the robot (Y pixels) */
 
 /**
  * How many commands are sent per second

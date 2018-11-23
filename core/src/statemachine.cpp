@@ -144,7 +144,7 @@ void StateMachine::state_machine(void){
       error_counter_sb = 0;
 
       // If basket is sufficently in center
-      if(abs(basket_position_x - FRAME_WIDTH / 2) < POSITION_ERROR) {
+      if(abs(basket_position_x - FRAME_WIDTH / 2) < 3) { // REPLACE 3 with pos error
         command = wheel::stop();
         serial_write(command);
         std::cout << "Entering THROW state" << std::endl;
@@ -161,7 +161,7 @@ void StateMachine::state_machine(void){
         int dir = sgn(basket_position_x - FRAME_WIDTH / 2) == -1 ? 0 : 180;
 
         // Compiles the command for orbiting the ball
-        command = wheel::move(sideways , dir, -sgn(basket_position_x - FRAME_WIDTH / 2) * (ball_position_x - FRAME_WIDTH / 2) * 0.01);
+        command = wheel::move(sideways , dir, -sgn(basket_position_x - FRAME_WIDTH / 2) * (ball_position_x - FRAME_WIDTH / 2) * 0.015);
         serial_write(command);
         std::cout << "I can see the basket" << std::endl;
       }
@@ -171,7 +171,7 @@ void StateMachine::state_machine(void){
         // Orbit aimlessly
         std::cout << "I can't see the basket" << std::endl;
         std::cout << ball_position_x << ", " << -(ball_position_x - FRAME_WIDTH / 2) * 0.02 << std::endl;
-        command = wheel::move(ORBIT_SPEED, 180, -(ball_position_x - FRAME_WIDTH / 2) * 0.02);
+        command = wheel::move(ORBIT_SPEED * 1.5 , 180, -(ball_position_x - FRAME_WIDTH / 2) * 0.02);
         serial_write(command);
       }
       break;
@@ -186,8 +186,14 @@ void StateMachine::state_machine(void){
         set_substate(THROW, THROW_GOAL);
 
       }else if(substate[THROW] == THROW_GOAL){
+        configure_thrower(look_up(basket_dist));
         // Move towards the basket
-        std::string command = wheel::move(MOVING_SPEED_THROW, 90, 0);
+        std::string command;
+        if(ball_position_x >= 0){
+          command = wheel::move(MOVING_SPEED_THROW , 90 - (ball_position_x- FRAME_WIDTH / 2) * 0.2 , 0);
+        }else{
+          command = wheel::move(MOVING_SPEED_THROW, 90, 0);
+        }
         serial_write(command);
 
         // If ball is out of sight (very near the thrower)

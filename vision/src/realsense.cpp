@@ -31,7 +31,7 @@ Scalar lowerBall;
 Scalar upperBasket;
 Scalar lowerBasket;
 output_t output_type = DEF;
-basket_t basket_type = BLUE;
+basket_t basket_type = PINK;
 bool display_contours = false;
 Point mouse(0,0);
 int frameCount = 0;
@@ -297,6 +297,8 @@ void basket_detection(image_transport::Publisher& pub, ros::Publisher& basketPub
 
     vision::Ball ball;
 
+    int depth;
+
     if(largestIndex >= 0){
         Rect r = boundRect[largestIndex];
         // uint16_t a = avg(dframe, Rect(Point(mouse.x - 5, mouse.y - 5), Point(mouse.x + 5, mouse.y + 5))); // Mouse testing
@@ -306,7 +308,7 @@ void basket_detection(image_transport::Publisher& pub, ros::Publisher& basketPub
             sum += vals[i];
         }
         // putText(out, to_string(a), Point(mouse.x + 5, mouse.y + 5), FONT_HERSHEY_SIMPLEX, 1, Scalar(0,0,0), 2); // Mouse testing
-        int depth = sum/vals.size();
+        depth = sum/vals.size();
 
         
         vision::BasketRelative basket;
@@ -319,7 +321,7 @@ void basket_detection(image_transport::Publisher& pub, ros::Publisher& basketPub
         rectangle(out, r.tl(), r.br(), Scalar(0,0,255), 1, 8, 0); // Mouse testing
     }
     
-    if(largestIndex >= 0){
+    if(largestIndex >= 0 && depth < 4200){
         Rect r = boundRect[largestIndex];
 
         

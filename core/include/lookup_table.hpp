@@ -105,6 +105,9 @@ inline int getSpeedForDistAndAngle(int dist, int angle){
  * the given distance or -1 for both if the values cannot be found
 */
 inline throw_info_t getSpeedForDist(int dist_mm){
+    // A wonderful hack made by Jürgen. Remove this once the main logic has been fixed!
+    // dist_mm -= 200;
+
     if(dist_mm < 1200){
         return (throw_info_t) { 1152, getSpeedForDistAndAngle(dist_mm, 1152) };
     }else if(dist_mm < 2500){
