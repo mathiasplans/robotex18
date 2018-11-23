@@ -87,23 +87,29 @@ void serial_init(int* serial){
     std::cout << "Error " << errno << " from tcsetattr" << std::endl;
 }
 
-std::string command, message_buffer;
-bool command_in_buffer = false;
+std::string message_buffer;
+int serial_port;
 
 /**
  * If serial node gets a Command message
  */
 void command_handler(const core::Command::ConstPtr& msg){
-  command = msg->command;
-  command_in_buffer = true;
-}
+  std::string command = msg->command;
 
-int serial_port;
+  // inlined write_command so no one would have to use self-restraint to not call it without publishing to the topic
 
-void write_cmd(std::string cmd) {
-  std::string write_string = cmd + "\r\n";
+  std::string write_string = command + "\n";
   write(serial_port, write_string.c_str(), write_string.size());
+  //std::cout << "sending: " << command << "\n";
 }
+
+ros::Publisher command_topic_out;
+void send_cmd(std::string cmd) {
+  core::Command cmd;
+  cmd.command = cmd;
+  command_topic_out.publish(cmd);
+}
+
 
 // removes the message tags in the front and back
 std::string remove_tags(std::string str) {
@@ -170,6 +176,9 @@ int main(int argc, char **argv){
   // Wheel speed topic
   ros::Publisher wheel_topic_out = n.advertise<serial::WheelSpeed>("wheelspeed", 128);
 
+  // declared above
+  command_topic_out = n.advertise<core::Command>("commands", 1000);
+
   // Subscribe to commands topic
   ros::Subscriber commands_topic_in = n.subscribe<core::Command>("commands", 1000, command_handler);
 
@@ -222,6 +231,7 @@ int main(int argc, char **argv){
           continue;
         }
 
+
         std::string message = remove_tags(message_tagged);
         if (message == "") {
           
@@ -232,21 +242,24 @@ int main(int argc, char **argv){
           // Message object to be sent to referee topic
           serial::Ref msg;
 
+          // if ping: no ref
+          // if all: no ack
+
           // Robot received start signal
           if(message == (START_SIGNAL(DB_FIELD, DB_ROBOT_NO))) {
+            send_cmd(ACK_SIGNAL(DB_FIELD, DB_ROBOT_NO));
             msg.start = true;
-            write_cmd(ACK_SIGNAL(DB_FIELD, DB_ROBOT_NO));
             referee_topic_out.publish(msg);
           }
           // Robot received stop signal
           else if(message == (STOP_SIGNAL(DB_FIELD, DB_ROBOT_NO))) {
             msg.start = false;
-            write_cmd(ACK_SIGNAL(DB_FIELD, DB_ROBOT_NO));
+            send_cmd(ACK_SIGNAL(DB_FIELD, DB_ROBOT_NO));
             referee_topic_out.publish(msg);
           }
           // Robot received ping signal, send ACK
           else if(message == (PING_SIGNAL(DB_FIELD, DB_ROBOT_NO))) {
-            write_cmd(ACK_SIGNAL(DB_FIELD, DB_ROBOT_NO));
+            send_cmd(ACK_SIGNAL(DB_FIELD, DB_ROBOT_NO));
           }
           //
           else if(message == (STOP_SIGNAL_ALL(DB_FIELD))){
@@ -270,6 +283,7 @@ int main(int argc, char **argv){
           speeds.wheel1 = stoi(split_message[1]);
           speeds.wheel2 = stoi(split_message[2]);
           speeds.wheel3 = stoi(split_message[3]);
+          speeds.wheel4 = stoi(split_message[4]);
 
           wheel_topic_out.publish(speeds);
         }

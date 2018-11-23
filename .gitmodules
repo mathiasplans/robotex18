@@ -1,7 +1,7 @@
 
 [submodule "async_web_server_cpp"]
 	path = async_web_server_cpp
-	url = git@github.com:GT-RAIL/async_web_server_cpp.git
+	url = https://github.com/GT-RAIL/async_web_server_cpp.git
 	ignore = all
 
 [submodule "web_video_server"]

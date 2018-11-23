@@ -6,8 +6,8 @@
 #include <image_transport/image_transport.h>
 #include "vision/Break.h"
 
-// #define fake_camera
-// #define vid_out
+//#define fake_camera
+#define vid_out
 
 using namespace std;
 using namespace cv;
