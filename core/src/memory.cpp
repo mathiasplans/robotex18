@@ -1,14 +1,14 @@
 #include "memory.hpp"
 
-Memory::Memory(int tick_rate) : ticks_per_second(tick_rate) {
+Memory::Memory(){
 
 }
 
 void Memory::operator<<(wheel_speeds_t wheel_speeds){
   // Determine the orientation
-  orientation += (wheel_speeds.wheel1 + wheel_speeds.wheel2 + wheel_speeds.wheel3 + wheel_speeds.wheel4) / ticks_per_second;
+  orientation += (wheel_speeds.wheel1 + wheel_speeds.wheel2 + wheel_speeds.wheel3 + wheel_speeds.wheel4);
 }
 
-float get_orientation(){
+float Memory::get_orientation(){
   return orientation;
 }

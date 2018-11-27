@@ -31,12 +31,13 @@ Scalar lowerBall;
 Scalar upperBasket;
 Scalar lowerBasket;
 output_t output_type = DEF;
-basket_t basket_type = PINK;
+basket_t basket_type = BLUE;
 bool display_contours = false;
 Point mouse(0,0);
 int frameCount = 0;
 vector<int> vals(15, 0);
 int valcounter = 0;
+bool inverted = false;
 
 
 void depth_callback(const sensor_msgs::ImageConstPtr& ros_frame){
@@ -82,6 +83,40 @@ bool ball_checker(){
     return false;
     
 }
+
+Mat threshold_calculator(Mat& frame){
+    Scalar upper_first = upperBasket;
+    Scalar lower_first = lowerBasket;
+    Scalar upper_second = upperBasket;
+    Scalar lower_second = lowerBasket;
+
+    if(basket_type == PINK){ // Basket is magenta??
+        upper_first[0] = 180;
+        // upper_first = Scalar(180, 0, 0) + upperBasket * Scalar(0, 1, 1);
+        lower_first[0] = upperBasket[0];
+        // lower_first = upperBasket * Scalar(1, 0, 0) + lowerBasket * Scalar(0, 1, 1);
+        upper_second[0] = lowerBasket[0];
+        // upper_second = lowerBasket * Scalar(1, 0, 0) + upperBasket * Scalar(0, 1, 1);
+        lower_second[0] = 0;
+        // lower_second = lowerBasket * Scalar(0, 1, 1);
+    }else{ // Basket is blue
+        // upper_first = upperBasket;
+        // lower_first = lowerBasket;
+        // upper_second = Scalar(0, 0, 0);
+        // lower_second = Scalar(0, 0, 0);
+    }
+
+    // cout << upper_first << " " << upper_second << endl;
+
+    Mat th1;
+    Mat th2;
+    inRange(frame, lower_first, upper_first, th1);
+    inRange(frame, lower_second, upper_second, th2);
+
+    bitwise_or(th1, th2, th1);
+
+    return th1;
+} 
 
 void ball_detection(image_transport::Publisher& pub, ros::Publisher& ballPub){
     
@@ -192,7 +227,7 @@ void ball_detection(image_transport::Publisher& pub, ros::Publisher& ballPub){
 
     resize(frame, frame, Size(480, 640));
 
-    frame = frame * 3;
+    frame = frame * 2;
 
     sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "rgb8", frame).toImageMsg();
     pub.publish(msg);
@@ -222,24 +257,26 @@ void basket_detection(image_transport::Publisher& pub, ros::Publisher& basketPub
     Mat element = getStructuringElement( MORPH_RECT,
                     Size(3, 3),
                     Point(1, 1));
-    Mat mask;
+    
+    
+    Mat mask = threshold_calculator(cframe);
 
     
 
-    Mat hue = cframe.clone();
+    // Mat hue = cframe.clone();
 
-    multiply(hue, Scalar(1, 0, 0), hue);
+    // multiply(hue, Scalar(1, 0, 0), hue);
 
-    // hue += Scalar(30, 0, 0);
-    // // Hacked together modulo operation on mat
-    hue.forEach<u_char>(Mod());
+    // // hue += Scalar(30, 0, 0);
+    // // // Hacked together modulo operation on mat
+    // hue.forEach<u_char>(Mod());
 
-    multiply(cframe, Scalar(0, 1, 1), cframe);
+    // multiply(cframe, Scalar(0, 1, 1), cframe);
 
-    cframe += hue;
+    // cframe += hue;
 
 
-    inRange(cframe, lowerBasket, upperBasket, mask);
+    // inRange(cframe, lowerBasket, upperBasket, mask);
     
     erode(mask, mask, element, Point(-1, -1),2);
     dilate(mask, mask, element, Point(-1, -1),2);
@@ -268,6 +305,7 @@ void basket_detection(image_transport::Publisher& pub, ros::Publisher& basketPub
         int area = boundRect[i].width * boundRect[i].height;
 
         if(area < 20 * 40) continue;
+        if(contourArea(contours[i]) < boundRect[i].width * boundRect[i].height * 0.7) continue;
 
         if(area > largestArea){
             largestIndex = i;

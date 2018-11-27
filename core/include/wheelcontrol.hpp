@@ -44,6 +44,17 @@ namespace wheel{
   );
 
   /**
+   * Get the command for moving with two polar coordinates which get added together
+   */
+  std::string move(
+    double speed1,            ///< Speed of the movement of the first vector
+    double direction1,        ///< Direction of the movement of the first vector
+    double speed2,            ///< Speed of the movement of the second vector
+    double direction2,        ///< Direction of the movement of the second vector
+    double angular_velocity  ///< Spinning speed while moving
+  );
+
+  /**
    * Get the command for stopping the motion
    */
   std::string stop();

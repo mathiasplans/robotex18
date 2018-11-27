@@ -37,7 +37,7 @@ void handle_debug_command(StateMachine& sm, pollfd* cinfd){
       sm.stop_machine();
       std::cout << "The robot has been  stopped" << std::endl;
     }
-    else if(input_command == std::string("reset")){
+    else if(input_command == std::string("reset") || input_command == std::string("r")){
       sm.reset_machine();
       std::cout << "The robot has been reset" << std::endl;
     }
@@ -55,6 +55,7 @@ void handle_debug_command(StateMachine& sm, pollfd* cinfd){
       else if(state_string == "MOVE_TO_BALL") sm.set_state(MOVE_TO_BALL);
       else if(state_string == "SEARCH_BASKET") sm.set_state(SEARCH_BASKET);
       else if(state_string == "THROW") sm.set_state(THROW);
+      else if(state_string == "TEST") sm.set_state(TEST);
       else std::cout << "Entered state is invalid" << std::endl;
     }
     // Currently doesn't work

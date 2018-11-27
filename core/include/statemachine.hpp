@@ -16,7 +16,8 @@ typedef enum{
   MOVE_TO_BALL,      ///< Once the ball is in the middle of the frame (Doesn't have to be if aproaching from an angle), move up to it
   SEARCH_BASKET,     ///< If the ball is sufficently close, search for the basket while keeping the ball in front of the robot
   THROW,             ///< Once the ball and the baslet are in the middle of the camera's frame, throw the ball to the basket
-  NUMBER_OF_STATES
+  NUMBER_OF_STATES,
+  TEST
 }state_t;
 
 /**

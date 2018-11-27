@@ -2,6 +2,7 @@
 #include "vision/Ball.h"
 #include "vision/BasketRelative.h"
 #include "serial/Ref.h"
+#include "serial/WheelSpeed.h"
 #include "core/Command.h"
 #include <boost/bind.hpp>
 #include <boost/ref.hpp>
@@ -10,6 +11,9 @@
 #include "wheelcontrol.hpp"
 #include "statemachine.hpp"
 #include "boost/bind.hpp"
+
+#include "memory.hpp"
+#include "speedcontrol.hpp"
 
 #include <poll.h>
 #include <regex>
@@ -34,13 +38,23 @@ void basket_depth_callback(const vision::BasketRelative::ConstPtr& msg, StateMac
 }
 
 /**
- * Handles the message from serial package
+ * Handle the message from serial package
  */
 void referee_handler(const serial::Ref::ConstPtr& msg, StateMachine& sm){
   if(msg->start)
     sm.start_machine();
   else
     sm.stop_machine();
+}
+
+static Memory mem = Memory();
+
+/**
+ *
+ */
+void wheel_sum(const serial::WheelSpeed::ConstPtr& msg){
+  mem << (wheel_speeds_t){msg->wheel1, msg->wheel2, msg->wheel3, msg->wheel4};
+  // std::cout << "The sum of wheels: " <<  mem.get_orientation() << std::endl;
 }
 
 int main(int argc, char **argv){
@@ -66,6 +80,9 @@ int main(int argc, char **argv){
 
   // Subscribe to a message from serial
   ros::Subscriber referee_signal = n.subscribe<serial::Ref>("referee_signals", 1000, boost::bind(referee_handler, _1, boost::ref(sm)));
+
+  // Subscribe to Wheel Speeds 
+  ros::Subscriber wheel_update = n.subscribe<serial::WheelSpeed>("wheelspeed", 1000, wheel_sum);
 
   std::cout << "Init finished" << std::endl;
 

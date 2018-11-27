@@ -1,4 +1,5 @@
 #include <ros/ros.h>
+#include <ros/console.h>
 #include <serial/Ref.h>
 #include <serial/WheelSpeed.h>
 #include <core/Command.h>
@@ -97,17 +98,23 @@ void command_handler(const core::Command::ConstPtr& msg){
   std::string command = msg->command;
 
   // inlined write_command so no one would have to use self-restraint to not call it without publishing to the topic
-
   std::string write_string = command + "\n";
+  ROS_DEBUG_STREAM(write_string);
   write(serial_port, write_string.c_str(), write_string.size());
   //std::cout << "sending: " << command << "\n";
 }
 
 ros::Publisher command_topic_out;
 void send_cmd(std::string cmd) {
-  core::Command cmd;
-  cmd.command = cmd;
-  command_topic_out.publish(cmd);
+  core::Command command;
+  command.command = cmd;
+  command_topic_out.publish(command);
+}
+
+void send_for_gs(const ros::TimerEvent&){
+  core::Command command;
+  command.command = std::string("gs\n");
+  command_topic_out.publish(command);
 }
 
 
@@ -182,6 +189,9 @@ int main(int argc, char **argv){
   // Subscribe to commands topic
   ros::Subscriber commands_topic_in = n.subscribe<core::Command>("commands", 1000, command_handler);
 
+  // Timer for sending for gs
+  ros::Timer timer = n.createTimer(ros::Duration(0.1), send_for_gs);
+  
   ssize_t index = 0;
   char read_buf[32];
 
@@ -193,17 +203,16 @@ int main(int argc, char **argv){
     // possible fix: write after reading.
     
     // There is something to write
-    if(command_in_buffer){
-      write_cmd(command);
-      command_in_buffer = false;
-    }
+    // if(command_in_buffer){
+    //   write_cmd(command);
+    //   command_in_buffer = false;
+    // }
 
     // Waiting for Referee commands
-    else{
+    //else{
 
       // Attempt to read the serial port
       index = read(serial_port, &read_buf, 32);
-
       // When error occurred or nothing was read
       if(index <= 0 ){
         ros::spinOnce();
@@ -276,7 +285,6 @@ int main(int argc, char **argv){
         // Robot received wheel rotation
         else if (message.find("gs") != std::string::npos) {
           serial::WheelSpeed speeds;
-
           const std::vector<std::string> split_message = split(message, ":");
           
           // split_message should be for example [gs, 5, 100, -20]
@@ -284,7 +292,6 @@ int main(int argc, char **argv){
           speeds.wheel2 = stoi(split_message[2]);
           speeds.wheel3 = stoi(split_message[3]);
           speeds.wheel4 = stoi(split_message[4]);
-
           wheel_topic_out.publish(speeds);
         }
 
@@ -295,7 +302,7 @@ int main(int argc, char **argv){
         }
 
         // Publish the message to referee topic
-      }
+      //}
 
       // Refresh loop variables
       index = 0;

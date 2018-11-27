@@ -1,3 +1,5 @@
+#define MAX_VALS Scalar(180, 255, 255)
+
 typedef enum{
     DEF,
     CONTOURS,

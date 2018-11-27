@@ -19,7 +19,7 @@
 /**
  * Moving speed when moving around the arena
  */
-#define MOVING_SPEED          70
+#define MOVING_SPEED          100
 
 /**
  * Moving speed when aproaching a ball when throwing
@@ -29,12 +29,12 @@
 /**
  * Moving speed when orbiting an object
  */
-#define ORBIT_SPEED           31
+#define ORBIT_SPEED           60
 
 /**
  * Position error of an object. That is how many pixels can an object be out of the intended position.
  */
-#define POSITION_ERROR        8
+#define POSITION_ERROR        6
 
 /**
  * Filed of view of the camera, in radians
@@ -44,7 +44,7 @@
 /**
  * How close has the ball have to be for the robot to stop
  */
-#define BALL_IN_FRONT         FRAME_HEIGHT / 1.32 /* Height at which the ball is in front of the robot (Y pixels) */
+#define BALL_IN_FRONT         FRAME_HEIGHT / 1.57 /* Height at which the ball is in front of the robot (Y pixels) */
 
 /**
  * How many commands are sent per second
