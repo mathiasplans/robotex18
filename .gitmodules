@@ -13,4 +13,5 @@
 	url = https://github.com/intel-ros/realsense.git
 [submodule "localization"]
 	path = localization
-	url = https://github.com/jyrgenlaks/Robotex2018-localization.git
+  url = https://github.com/jyrgenlaks/Robotex2018-localization.git
+  ignore = all

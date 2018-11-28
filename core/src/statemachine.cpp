@@ -165,6 +165,8 @@ void StateMachine::state_machine(void){
       static int forwards_speed;
       forwards_speed = abs(ball_position_y - BALL_IN_FRONT) * 0.5;
 
+      static bool see_ball = false, seent_ball = false;
+
       if(abs(basket_position_x - FRAME_WIDTH / 2) < POSITION_ERROR * 2){
         std::cout << "Basket diff: " << basket_position_x - FRAME_WIDTH / 2 << "   ball diff " << ball_position_x - FRAME_WIDTH / 2 << std::endl;
         command = wheel::move(-ORBIT_SPEED * (basket_position_x - FRAME_WIDTH / 2) * 0.007 , 0, 0, 90, -(ball_position_x - FRAME_WIDTH / 2) * 0.015);
@@ -180,13 +182,21 @@ void StateMachine::state_machine(void){
 
         // Compiles the command for orbiting the ball
         command = wheel::move(sideways, orbit_dir, forwards_speed, forwards_dir, -(ball_position_x - FRAME_WIDTH / 2) * 0.01);
-        ROS_INFO("I can see the basket");
+        if(!see_ball){
+          ROS_INFO("I can see the basket");
+          see_ball = true;
+          seent_ball = false;
+        }
       }
 
       // If basket is not in sight
       else{
         // Orbit aimlessly
-        ROS_INFO("I can't see the basket");
+        if(!seent_ball){
+          ROS_INFO("I can't see the basket");
+          seent_ball = true;
+          see_ball = false;
+        }
         ROS_INFO_STREAM("" << ball_position_x << ", " << -(ball_position_x - FRAME_WIDTH / 2) * 0.02);
         command = wheel::move(ORBIT_SPEED, 180, forwards_speed, forwards_dir,  -(ball_position_x - FRAME_WIDTH / 2) * 0.01);
         // serial_write(command);
@@ -211,8 +221,8 @@ void StateMachine::state_machine(void){
         configure_thrower(look_up(basket_dist));
         // Move towards the basket
         std::string command;
-        if(ball_position_x >= 0){
-          command = wheel::move(-MOVING_SPEED_THROW * (ball_position_x - FRAME_WIDTH / 2) * 0.005 , 0, MOVING_SPEED_THROW, 90, 0);
+        if(false && ball_position_x >= 0){
+          command = wheel::move(MOVING_SPEED_THROW * (ball_position_x - FRAME_WIDTH / 2) * 0.005 , 0, MOVING_SPEED_THROW, 90, -(basket_position_x - FRAME_WIDTH / 2) * 0.01);
         }else{
           command = wheel::move(MOVING_SPEED_THROW, 90, 0);
         }
@@ -369,3 +379,5 @@ void StateMachine::deaim(){
   serial_write(wheel::thrower_stop());
   serial_write(wheel::aim(1000));
 }
+
+// TODO: kui nurk on positiivne siis pööra paremale

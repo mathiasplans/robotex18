@@ -80,13 +80,7 @@ private:
    */
   void complete_throw(const ros::TimerEvent&);
 
-  /* Communication functions */
-  /**
-   * Function for communicating with serial node.
-   */
-  void serial_write(
-    std::string  ///< String to be sent over serial
-  );
+
 
   /* Lookup table functions */
   /**
@@ -155,6 +149,14 @@ public:
   substate_t get_substate(
     state_t superstate  ///< Superstate whom substate is called upon
   );
+
+    /* Communication functions */
+    /**
+     * Function for communicating with serial node.
+     */
+    void serial_write(
+            std::string  ///< String to be sent over serial
+    );
 
   /**
    * Change the state of the State Machine

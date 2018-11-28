@@ -33,6 +33,11 @@ void handle_debug_command(StateMachine& sm, pollfd* cinfd){
       sm.start_machine();
       std::cout << "The robot has been started" << std::endl;
     }
+    if(input_command.find("send") == 0){
+      std::string s = input_command.substr(5);
+      sm.serial_write(s);
+      std::cout << "Wrote to serial" << s;
+    }
     else if(input_command == std::string("stop")){
       sm.stop_machine();
       std::cout << "The robot has been  stopped" << std::endl;
