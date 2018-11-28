@@ -15,8 +15,47 @@
 #include "memory.hpp"
 #include "speedcontrol.hpp"
 
+#include <localization/BasketAngle.h>
+
 #include <poll.h>
 #include <regex>
+
+#define MAX_BALL_SHIFT 15
+#define FORGET_TIME 3
+
+void ball_filter(float& ball_x, float& ball_y){
+  static float last_ball_x = -1, last_ball_y = -1;
+  static int error_count;
+  
+  // If new coordinates are same as the last ones, do nothing
+  if(ball_x == last_ball_x && ball_y == last_ball_y){
+    
+  }
+  
+  // If the ball position has chaned too much
+  else if(std::abs(ball_x - last_ball_x) > MAX_BALL_SHIFT || std::abs(ball_y - last_ball_y) > MAX_BALL_SHIFT){
+    error_count += 1;
+    ball_x = last_ball_x;
+    ball_y = last_ball_y;
+  }
+
+  // Reset the error counter
+  else error_count = 0;
+
+  // If error count is too high, dismiss the previous data and start again
+  if(error_count){
+    if(error_count >= FORGET_TIME){
+      error_count = 0;
+      last_ball_x = last_ball_y = ball_x = ball_y = -1;
+    }
+
+    return;
+  }
+
+  error_count = 0;
+  last_ball_x = ball_x;
+  last_ball_y = ball_y;
+}
 
 /**
  * Handles the message from vision package
@@ -52,9 +91,12 @@ static Memory mem = Memory();
 /**
  *
  */
-void wheel_sum(const serial::WheelSpeed::ConstPtr& msg){
-  mem << (wheel_speeds_t){msg->wheel1, msg->wheel2, msg->wheel3, msg->wheel4};
-  // std::cout << "The sum of wheels: " <<  mem.get_orientation() << std::endl;
+void localization_callback(const localization::BasketAngle::ConstPtr& msg, StateMachine& sm){
+  if(sm.blue_is_primary()){
+    sm.set_basket_angle(msg->blue, msg->pink);
+  }else{
+    sm.set_basket_angle(msg->pink, msg->blue);
+  }
 }
 
 int main(int argc, char **argv){
@@ -69,7 +111,7 @@ int main(int argc, char **argv){
   ros::Publisher command_topic_out = n.advertise<core::Command>("commands", 1000);
 
   // Create state machine instance
-  StateMachine sm = StateMachine(command_topic_out, n);
+  StateMachine sm = StateMachine(command_topic_out, n, BLUE);
 
   // Subscribe to a message from vision
   ros::Subscriber image_processor = n.subscribe<vision::Ball>("ball", 1000, boost::bind(vision_callback_ball, _1, boost::ref(sm)));
@@ -81,8 +123,8 @@ int main(int argc, char **argv){
   // Subscribe to a message from serial
   ros::Subscriber referee_signal = n.subscribe<serial::Ref>("referee_signals", 1000, boost::bind(referee_handler, _1, boost::ref(sm)));
 
-  // Subscribe to Wheel Speeds 
-  ros::Subscriber wheel_update = n.subscribe<serial::WheelSpeed>("wheelspeed", 1000, wheel_sum);
+  // Subscribe to localization topic
+  ros::Subscriber loc_topic = n.subscribe<localization::BasketAngle>("relativeangle", 1000, boost::bind(localization_callback, _1, boost::ref(sm)));
 
   std::cout << "Init finished" << std::endl;
 

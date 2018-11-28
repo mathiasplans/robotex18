@@ -158,7 +158,7 @@ void ball_detection(image_transport::Publisher& pub, ros::Publisher& ballPub){
     
     for( int i = 0; i< contours.size(); i++ ){
         if(radius[i] < 3 ) continue;//|| radius[i] > 55 || center[i].y < 100) continue;
-        if(polsby_doppler(contours[i]) < 0.65) continue;
+        if(polsby_doppler(contours[i]) < 0.7) continue;
         foundCount++;
         if(radius[i] > largestRadius){
             largestIndex = i;

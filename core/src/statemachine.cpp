@@ -90,6 +90,10 @@ void StateMachine::state_machine(void){
       }
 
       break;
+    
+    case REPOSITION:
+      ROS_INFO("Entering SEARCH_BALL state");
+      set_state(SEARCH_BALL);
 
     case MOVE_TO_BALL:
       // Check if the ball is still visible
@@ -151,7 +155,7 @@ void StateMachine::state_machine(void){
       error_counter_sb = 0;
 
       // If basket is sufficently in center
-      if(abs(basket_position_x - FRAME_WIDTH / 2) < POSITION_ERROR && abs(ball_position_x - FRAME_WIDTH / 2) < POSITION_ERROR * 2) {
+      if(abs(basket_position_x - FRAME_WIDTH / 2) < POSITION_ERROR* 5 && abs(ball_position_x - FRAME_WIDTH / 2) < POSITION_ERROR * 4) {
         command = wheel::stop();
         serial_write(command);
         ROS_INFO("Entering THROW state");
@@ -168,20 +172,20 @@ void StateMachine::state_machine(void){
       static bool see_ball = false, seent_ball = false;
 
       if(abs(basket_position_x - FRAME_WIDTH / 2) < POSITION_ERROR * 2){
-        std::cout << "Basket diff: " << basket_position_x - FRAME_WIDTH / 2 << "   ball diff " << ball_position_x - FRAME_WIDTH / 2 << std::endl;
-        command = wheel::move(-ORBIT_SPEED * (basket_position_x - FRAME_WIDTH / 2) * 0.007 , 0, 0, 90, -(ball_position_x - FRAME_WIDTH / 2) * 0.015);
-      }else
+        // std::cout << "Basket diff: " << basket_position_x - FRAME_WIDTH / 2 << "   ball diff " << ball_position_x - FRAME_WIDTH / 2 << std::endl;
+        command = wheel::move(-ORBIT_SPEED * (basket_position_x - FRAME_WIDTH / 2) * 0.007 , 0, -(ball_position_y - FRAME_HEIGHT / 1.27) * 0.05, 90, -(ball_position_x - FRAME_WIDTH / 2) * 0.015);
+      }
+      
       // If basket is just in sight
-      if(basket_position_x >= 0){
+      else if(basket_position_x >= 0){
         // Added (int) conversion, not sure if correct. TODO
         // Calculate the orbiting speed, gets more slower the more the basket approaches the center. Minimum value is 15
         int sideways = std::max((int) abs((basket_position_x - FRAME_WIDTH / 2) * 0.15), 15);
-        std::cout << sideways << std::endl;
         // Calculates the direction of the orbit.
         int orbit_dir = sgn(basket_position_x - FRAME_WIDTH / 2) == -1 ? 0 : 180;
 
         // Compiles the command for orbiting the ball
-        command = wheel::move(sideways, orbit_dir, forwards_speed, forwards_dir, -(ball_position_x - FRAME_WIDTH / 2) * 0.01);
+        command = wheel::move(sideways, orbit_dir, -(ball_position_y - FRAME_HEIGHT / 1.27) * 0.25, 90, -(ball_position_x - FRAME_WIDTH / 2) * 0.01);
         if(!see_ball){
           ROS_INFO("I can see the basket");
           see_ball = true;
@@ -197,8 +201,20 @@ void StateMachine::state_machine(void){
           seent_ball = true;
           see_ball = false;
         }
-        ROS_INFO_STREAM("" << ball_position_x << ", " << -(ball_position_x - FRAME_WIDTH / 2) * 0.02);
-        command = wheel::move(ORBIT_SPEED, 180, forwards_speed, forwards_dir,  -(ball_position_x - FRAME_WIDTH / 2) * 0.01);
+
+
+        // Estimated direction of the basket
+        static int basket_direction;
+        
+        basket_direction = basket_angle_primary > 0 ? 180 : 0;
+std::cout << basket_angle_primary << std::endl;
+        command = wheel::move(
+            ORBIT_SPEED,
+            basket_direction,
+            forwards_speed,
+            forwards_dir,
+            -(ball_position_x - FRAME_WIDTH / 2) * 0.01
+        );
         // serial_write(command);
       }
 
@@ -210,26 +226,26 @@ void StateMachine::state_machine(void){
 
     case THROW:
       // The ball is not thrown yet but we are getting close!
+      configure_thrower(look_up(basket_dist));
       if(substate[THROW] == THROW_AIM){
         // Configure the thrower
-        configure_thrower(look_up(basket_dist));
 
         // Update the substate
         set_substate(THROW, THROW_GOAL);
 
       }else if(substate[THROW] == THROW_GOAL){
-        configure_thrower(look_up(basket_dist));
         // Move towards the basket
         std::string command;
-        if(false && ball_position_x >= 0){
-          command = wheel::move(MOVING_SPEED_THROW * (ball_position_x - FRAME_WIDTH / 2) * 0.005 , 0, MOVING_SPEED_THROW, 90, -(basket_position_x - FRAME_WIDTH / 2) * 0.01);
+        if(ball_position_x >= 0){
+          command = wheel::move(MOVING_SPEED_THROW, 90,  -(basket_position_x - FRAME_WIDTH / 2) * 0.01);
+          // command = wheel::move(MOVING_SPEED_THROW * (ball_position_x - FRAME_WIDTH / 2) * 0.005 , 0, MOVING_SPEED_THROW, 90, -(basket_position_x - FRAME_WIDTH / 2) * 0.01);
         }else{
           command = wheel::move(MOVING_SPEED_THROW, 90, 0);
         }
         serial_write(command);
 
         // If ball is out of sight (very near the thrower)
-        if(ball_position_x < 0){
+        if(true || ball_position_x < 0){
           // Starts the thrower timer. At the end of this timer, the thrower
           // stops and the robot starts to search for a new ball
           throwing_timer.start();
@@ -240,7 +256,7 @@ void StateMachine::state_machine(void){
 
       }else if(substate[THROW] == THROW_GOAL_NO_BALL){
         // Move towards the basket
-        std::string command = wheel::move(MOVING_SPEED_THROW, 90, 0);
+        std::string command = wheel::move(MOVING_SPEED_THROW, 90,  -(basket_position_x - FRAME_WIDTH / 2) * 0.01);
         serial_write(command);
 
         // If the thrower timer has triggered
@@ -249,7 +265,7 @@ void StateMachine::state_machine(void){
           throw_completed = false;
           
           // Stop the thrower
-          command = wheel::thrower(0);
+          command = wheel::thrower(1000);
           serial_write(command);
           
           // Stop the robot
@@ -298,7 +314,7 @@ void StateMachine::reset_substates(){
   substate[THROW] = THROW_AIM;
 }
 
-StateMachine::StateMachine(ros::Publisher& topic, ros::NodeHandle& node) : publisher(topic), command_delay(COMMAND_RATE), ros_node(node) {
+StateMachine::StateMachine(ros::Publisher& topic, ros::NodeHandle& node, basket_t basket_type) : publisher(topic), command_delay(COMMAND_RATE), ros_node(node), primary_basket(basket_type) {
   ROS_INFO("A StateMachine object was created with publisher");
   throwing_timer = ros_node.createTimer(ros::Duration(THROW_TIME), &StateMachine::complete_throw, this, true);
   throwing_timer.stop();
@@ -380,4 +396,16 @@ void StateMachine::deaim(){
   serial_write(wheel::aim(1000));
 }
 
+void StateMachine::set_basket_angle(float primary_angle, float secondary_angle){
+  basket_angle_primary = primary_angle;
+  basket_angle_secondary = secondary_angle;
+}
+
+bool StateMachine::blue_is_primary(){
+  return primary_basket == BLUE;
+}
+
+bool StateMachine::pink_is_primary(){
+  return primary_basket == PINK;
+}
 // TODO: kui nurk on positiivne siis pööra paremale

@@ -13,6 +13,7 @@
 typedef enum{
   IDLE,              ///< The robot is idle, it doesn't do anything but tries to start searching for ball
   SEARCH_BALL,       ///< The robot is searching for balls
+  REPOSITION,        ///< If there aren't any balls in sight, reposition to another location for better coverage
   MOVE_TO_BALL,      ///< Once the ball is in the middle of the frame (Doesn't have to be if aproaching from an angle), move up to it
   SEARCH_BASKET,     ///< If the ball is sufficently close, search for the basket while keeping the ball in front of the robot
   THROW,             ///< Once the ball and the baslet are in the middle of the camera's frame, throw the ball to the basket
@@ -35,6 +36,14 @@ typedef enum{
 }substate_t;
 
 /**
+ *
+ */
+typedef enum{
+  BLUE,  ///<
+  PINK   ///<
+}basket_t;
+
+/**
  * The class for the main State Machine of the robot
  */
 class StateMachine{
@@ -49,6 +58,9 @@ private:
   float ball_position_y;  ///< Y coordinates of the ball
   float basket_position_x;  ///< X coordinates of the basket
   float basket_position_y;  ///< Y coordinates of the basket
+  float basket_angle_primary;  ///< Relative angle to the blue basket, a.k.a angle between robot's peripheral view and the basket
+  float basket_angle_secondary;  ///< Relative angle to the pink basket, a.k.a angle between robot's peripheral view and the basket
+  basket_t primary_basket;  ///< The type of target basket. Can be BLUE or PINK
 
   /* Variables which determine the decisions of the robot */
   bool throw_completed = false;  ///< True if a throw was a success
@@ -131,7 +143,7 @@ public:
    * Constructor with publisher object, use this if you want
    * the object to communicate with serial port or be functional at all
    */
-  StateMachine(ros::Publisher&, ros::NodeHandle&);
+  StateMachine(ros::Publisher&, ros::NodeHandle&, basket_t basket_type);
 
   /**
    * The State Machine logic. Calling this functon will tick the state machine. Put this into the infinite loop
@@ -259,4 +271,21 @@ public:
    */
   void set_stop_signal(bool);
 
+  /**
+   *
+   */
+  void set_basket_angle(
+      float blue_angle,  ///<
+      float pink_angle   ///<
+  );
+
+  /**
+   *
+   */
+  bool blue_is_primary();
+
+  /**
+   *
+   */
+  bool pink_is_primary();
 };

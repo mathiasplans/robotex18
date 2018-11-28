@@ -19,7 +19,7 @@
 /**
  * Moving speed when moving around the arena
  */
-#define MOVING_SPEED          100
+#define MOVING_SPEED          150
 
 /**
  * Moving speed when aproaching a ball when throwing
@@ -29,7 +29,7 @@
 /**
  * Moving speed when orbiting an object
  */
-#define ORBIT_SPEED           60
+#define ORBIT_SPEED           80
 
 /**
  * Position error of an object. That is how many pixels can an object be out of the intended position.
@@ -49,7 +49,7 @@
 /**
  * How many commands are sent per second
  */
-#define COMMAND_RATE          10
+#define COMMAND_RATE          20
 
 /**
  * The delay between the commands
@@ -69,7 +69,7 @@
 #define WHEEL_D               13
 
 /**
- * The radios of a wheel, in cm
+ * The radius of a wheel, in cm
  *
  * Note: Probably not needed as precise speed is not really needed right now and this acts just as a linear multiplier to all moving speeds
  */
@@ -91,10 +91,3 @@
  * In seconds
  */
 #define THROW_TIME            3
-
-/**
- * The duration for the timer for debugging
- *
- * In seconds
- */
-#define DEBUG_TIME            5
