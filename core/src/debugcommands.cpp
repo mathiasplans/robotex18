@@ -2,6 +2,7 @@
 #include <string>
 #include <regex>
 #include <vector>
+#include <algorithm>
 
 // Mimicking pythons split function
 std::vector<std::string> split(std::string str, std::string sep = " ") {
@@ -18,6 +19,19 @@ std::vector<std::string> split(std::string str, std::string sep = " ") {
   return result;
 }
 
+std::string to_lower(std::string str) {
+  std::string res(str.size(), ' ');
+  std::transform(str.begin(), str.end(), res.begin(), ::tolower);
+  return res;
+}
+
+int get_state_ix(std::string s) {
+  for (int i = 0; i < 8; ++i) {
+    if (state_names[i] == s) {
+      return i;
+    }
+  }
+}
 /**
  *
  */
@@ -36,7 +50,7 @@ void handle_debug_command(StateMachine& sm, pollfd* cinfd){
     if(input_command.find("send") == 0){
       std::string s = input_command.substr(5);
       sm.serial_write(s);
-      std::cout << "Wrote to serial" << s;
+      std::cout << "Wrote to serial: " << s << "\n";
     }
     else if(input_command == std::string("stop")){
       sm.stop_machine();
@@ -49,6 +63,16 @@ void handle_debug_command(StateMachine& sm, pollfd* cinfd){
     else if(input_command == std::string("pause")){
       sm.pause_machine();
       std::cout << "The robot has been paused" << std::endl;
+    }
+    else if(input_command.find("state") == 0){
+      if (input_command[5] == ' ') { // we have another string as a state name
+        std::string state_string = to_lower(input_command.substr(6));
+        std::cout << "Switching to state: " << state_string << "\n";
+        int i = get_state_ix(state_string);
+        sm.set_state((state_t)i);
+      } else {
+        std::cout << "Current state: " << state_names[sm.get_state()] << "\n";
+      }
     }
     // Currently doesn't work
     else if(std::regex_search(input_command, std::regex("set state [A-Z_]+"))){

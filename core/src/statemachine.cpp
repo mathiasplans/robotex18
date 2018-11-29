@@ -195,19 +195,20 @@ void StateMachine::state_machine(void){
 
       // If basket is not in sight
       else{
-        // Orbit aimlessly
+        //
+        static int basket_direction;
+        
+
         if(!seent_ball){
           ROS_INFO("I can't see the basket");
           seent_ball = true;
           see_ball = false;
+
+          // Estimated direction of the basket
+          basket_direction = basket_angle_primary > 0 ? 180 : 0;
         }
 
-
-        // Estimated direction of the basket
-        static int basket_direction;
-        
-        basket_direction = basket_angle_primary > 0 ? 180 : 0;
-std::cout << basket_angle_primary << std::endl;
+        // Orbit aimlessly
         command = wheel::move(
             ORBIT_SPEED,
             basket_direction,

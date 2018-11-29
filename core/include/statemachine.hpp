@@ -21,6 +21,17 @@ typedef enum{
   TEST
 }state_t;
 
+static std::array<std::string, 8> state_names = {
+        "idle",
+        "search_ball",
+        "reposition",
+        "move_to_ball",
+        "search_basket",
+        "throw",
+        "number_of_states",
+        "test"
+};
+
 /**
  * Sub-states for states in state_t
  */

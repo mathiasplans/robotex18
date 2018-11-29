@@ -6,10 +6,10 @@
  *
  */
 typedef struct{
-  int16_t wheel1;
-  int16_t wheel2;
-  int16_t wheel3;
-  int16_t wheel4;
+  int wheel1;
+  int wheel2;
+  int wheel3;
+  int wheel4;
 }wheel_speeds_t;
 
 /**
