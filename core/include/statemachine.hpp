@@ -181,6 +181,8 @@ public:
             std::string  ///< String to be sent over serial
     );
 
+    void set_primary_basket(basket_t basket);
+
   /**
    * Change the state of the State Machine
    */

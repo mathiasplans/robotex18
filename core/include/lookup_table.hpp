@@ -12,7 +12,7 @@ typedef struct{
 }throw_info_t;
 
 // I know it's bad, get over it!
-static vector< vector<int> > speeds_table = {
+/*static vector< vector<int> > speeds_table = {
     //dist, speed, angle
     {409,	1450,	1000},
     {637,	1525,	1000},
@@ -47,7 +47,33 @@ static vector< vector<int> > speeds_table = {
     {585,	1430,	1152},
     {395,	1355,	1152},
     {1013,	1530,	1152}
+};*/
+
+//New lookup table as of 30.11.2018
+static vector< vector<int> > speeds_table = {
+    //dist, speed, angle
+    {1605,  1500,   1500},
+    {1185,  1390,   1500},
+    {885,   1350,   1500},
+    {735,   1330,   1500},
+    {1820,  1580,   1500},
+    {2310,  1730,   1500},
+    {2590,  1780,   1500},
+    {2800,  1805,   1500},
+    {2850,  1815,   1500},
+
+    {2850,  1770,   1700},
+    {3280,  1835,   1700},
+    {3600,  1900,   1700},
+    {2224,  1640,   1700},
+
+    {713,   1480,   1152},
+    {564,   1395,   1152},
+    {313,   1325,   1152},
+    {1001,  1545,   1152}
 };
+//search: (\d+)\s(\d+)\s(\d+)
+//replace: {\1, \2, \3},
 
 /**
  * Returns the desired thrower BLDC speed in microseconds for the given
@@ -108,13 +134,11 @@ inline throw_info_t getSpeedForDist(int dist_mm){
     // A wonderful hack made by Jürgen. Remove this once the main logic has been fixed!
     dist_mm += 50;
 
-    if(dist_mm < 1200){
+    if(dist_mm < 1000){
         return (throw_info_t) { 1152, getSpeedForDistAndAngle(dist_mm, 1152) };
-    }else if(dist_mm < 2500){
-        return (throw_info_t) { 1352, getSpeedForDistAndAngle(dist_mm, 1352) };
-    }else if(dist_mm < 3000){
+    }else if(dist_mm < 2800){
         return (throw_info_t) { 1500, getSpeedForDistAndAngle(dist_mm, 1500) };
-    }else if(dist_mm < 3490){
+    }else if(dist_mm < 3600){
         return (throw_info_t) { 1700, getSpeedForDistAndAngle(dist_mm, 1700) };
     }else{
         return (throw_info_t) { -1, -1 };

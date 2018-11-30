@@ -3,6 +3,7 @@
 #include <serial/Ref.h>
 #include <serial/WheelSpeed.h>
 #include <core/Command.h>
+#include <std_msgs/String.h>
 
 #include <sstream>
 #include <string>
@@ -20,8 +21,9 @@
 /**
  * Referee commands
  */
-#define DB_FIELD     "A"
-#define DB_ROBOT_NO  "A"
+
+std::string field_id = "A";
+std::string robot_id = "A";
 
 #define START std::string("START----")
 #define STOP  std::string("STOP-----")
@@ -102,6 +104,7 @@ void command_handler(const core::Command::ConstPtr& msg){
   ROS_DEBUG_STREAM(write_string);
   write(serial_port, write_string.c_str(), write_string.size());
   //std::cout << "sending: " << command << "\n";
+  //ROS_INFO("wrote");
 }
 
 ros::Publisher command_topic_out;
@@ -112,10 +115,10 @@ void send_cmd(std::string cmd) {
 }
 
 void send_for_gs(const ros::TimerEvent&){
-  core::Command command;
-  command.command = std::string("gs\n");
-  command_topic_out.publish(command);
+  send_cmd("gs");
 }
+
+
 
 
 // removes the message tags in the front and back
@@ -156,7 +159,7 @@ int main(int argc, char **argv){
 
 
   // Open the serial port
-  serial_port = open("/dev/ttyACM0", O_RDWR | O_NOCTTY | O_NDELAY);
+  serial_port = open("/dev/ttyACM0", O_RDWR | O_NOCTTY | O_NDELAY | O_NONBLOCK);
 
   // Opening the serial port failed
   if(serial_port == -1){
@@ -179,6 +182,7 @@ int main(int argc, char **argv){
 
   // Add the referee topic to topics pool
   ros::Publisher referee_topic_out = n.advertise<serial::Ref>("referee_signals", 128);
+  ros::Publisher basket_out = n.advertise<std_msgs::String>("basket_type", 10);
 
   // Wheel speed topic
   ros::Publisher wheel_topic_out = n.advertise<serial::WheelSpeed>("wheelspeed", 128);
@@ -190,15 +194,21 @@ int main(int argc, char **argv){
   ros::Subscriber commands_topic_in = n.subscribe<core::Command>("commands", 1000, command_handler);
 
   // Timer for sending for gs
-  ros::Timer timer = n.createTimer(ros::Duration(0.1), send_for_gs);
+  ros::Timer timer = n.createTimer(ros::Duration(0.2), send_for_gs);
   
   ssize_t index = 0;
-  char read_buf[32];
+  char read_buf[512];
 
   // Set rate for updates
-  ros::Rate r(100);
+  ros::Rate r(80);
+
+  // 12 sec
+
+
 
   while(ros::ok()){
+    r.sleep();
+    //send_cmd("gs");
     // what happens when we have something to read while at the same time, needing to write?
     // possible fix: write after reading.
     
@@ -212,7 +222,7 @@ int main(int argc, char **argv){
     //else{
 
       // Attempt to read the serial port
-      index = read(serial_port, &read_buf, 32);
+      index = read(serial_port, &read_buf, 512);
       // When error occurred or nothing was read
       if(index <= 0 ){
         ros::spinOnce();
@@ -221,7 +231,8 @@ int main(int argc, char **argv){
       }
       // Successful read
       else {
-        
+
+        //ROS_INFO("read");
         message_buffer.append(read_buf, index);
         
         // need to read more. no complete message
@@ -255,28 +266,28 @@ int main(int argc, char **argv){
           // if all: no ack
 
           // Robot received start signal
-          if(message == (START_SIGNAL(DB_FIELD, DB_ROBOT_NO))) {
-            send_cmd(ACK_SIGNAL(DB_FIELD, DB_ROBOT_NO));
+          if(message == (START_SIGNAL(field_id, robot_id))) {
+            send_cmd(ACK_SIGNAL(field_id, robot_id));
             msg.start = true;
             referee_topic_out.publish(msg);
           }
           // Robot received stop signal
-          else if(message == (STOP_SIGNAL(DB_FIELD, DB_ROBOT_NO))) {
+          else if(message == (STOP_SIGNAL(field_id, robot_id))) {
             msg.start = false;
-            send_cmd(ACK_SIGNAL(DB_FIELD, DB_ROBOT_NO));
+            send_cmd(ACK_SIGNAL(field_id, robot_id));
             referee_topic_out.publish(msg);
           }
           // Robot received ping signal, send ACK
-          else if(message == (PING_SIGNAL(DB_FIELD, DB_ROBOT_NO))) {
-            send_cmd(ACK_SIGNAL(DB_FIELD, DB_ROBOT_NO));
+          else if(message == (PING_SIGNAL(field_id, robot_id))) {
+            send_cmd(ACK_SIGNAL(field_id, robot_id));
           }
           //
-          else if(message == (STOP_SIGNAL_ALL(DB_FIELD))){
+          else if(message == (STOP_SIGNAL_ALL(field_id))){
             msg.start = false;
             referee_topic_out.publish(msg);
           }
           //
-          else if(message == (START_SIGNAL_ALL(DB_FIELD))){
+          else if(message == (START_SIGNAL_ALL(field_id))){
             msg.start = true;
             referee_topic_out.publish(msg);
           }
@@ -293,11 +304,25 @@ int main(int argc, char **argv){
           speeds.wheel3 = stoi(split_message[3]);
           speeds.wheel4 = stoi(split_message[4]);
           wheel_topic_out.publish(speeds);
+        } else if (message.find("stop") != std::string::npos) {
+          // TODO
+        } else if (message.find("remote") != std::string::npos) {
+          // TODO
+        } else if (message.find("robot_id") != std::string::npos) {
+          robot_id = split(message, ":")[1];
+        } else if (message.find("field_id") != std::string::npos) {
+          field_id = split(message, ":")[1];
+        } else if (message.find("basket") != std::string::npos) {
+          std::string basket = split(message, ":")[1];
+          //ROS_INFO("basket: %s", basket.c_str());
+          std_msgs::String msg;
+          msg.data = basket;
+          basket_out.publish(msg);
         }
 
         // Received message is unknown
         else {
-          std::cout << "Received serial message was not a known command :" << std::endl << "\t" << message << std::endl;
+          ROS_INFO("RECEIVED: %s", message.c_str());
           continue;
         }
 
@@ -307,10 +332,12 @@ int main(int argc, char **argv){
       // Refresh loop variables
       index = 0;
 
+
     }
 
     // For callbacks
     ros::spinOnce();
+
   }
 
   return 0;

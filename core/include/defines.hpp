@@ -9,7 +9,7 @@
 /**
  * Spinning speed when searching for a ball/basket
  */
-#define SPIN_SEARCH_SPEED     1.8
+#define SPIN_SEARCH_SPEED     1.6
 
 /**
  * Spinning speed when centering on a ball
@@ -29,7 +29,7 @@
 /**
  * Moving speed when orbiting an object
  */
-#define ORBIT_SPEED           80
+#define ORBIT_SPEED           65
 
 /**
  * Position error of an object. That is how many pixels can an object be out of the intended position.

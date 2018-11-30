@@ -99,6 +99,7 @@ void StateMachine::state_machine(void){
       // Check if the ball is still visible
       static int error_counter_mtb = 0;
       if(ball_position_x < 0 && error_counter_mtb++ > 1){
+        ROS_INFO("The ball was lost");
         ROS_INFO("Entering SEARCH_BALL state");
         set_state(SEARCH_BALL);
         break;
@@ -180,7 +181,8 @@ void StateMachine::state_machine(void){
       else if(basket_position_x >= 0){
         // Added (int) conversion, not sure if correct. TODO
         // Calculate the orbiting speed, gets more slower the more the basket approaches the center. Minimum value is 15
-        int sideways = std::max((int) abs((basket_position_x - FRAME_WIDTH / 2) * 0.15), 15);
+        // NOTE: The last bit (basket_dist*basket_dist*basket_dist/30) is experimental
+        int sideways = std::max((int) abs((basket_position_x - FRAME_WIDTH / 2) * 0.15), 15) /* - basket_dist * basket_dist * basket_dist / 30 */;
         // Calculates the direction of the orbit.
         int orbit_dir = sgn(basket_position_x - FRAME_WIDTH / 2) == -1 ? 0 : 180;
 
@@ -197,7 +199,6 @@ void StateMachine::state_machine(void){
       else{
         //
         static int basket_direction;
-        
 
         if(!seent_ball){
           ROS_INFO("I can't see the basket");
@@ -267,6 +268,10 @@ void StateMachine::state_machine(void){
           
           // Stop the thrower
           command = wheel::thrower(1000);
+          serial_write(command);
+
+          // Sset servo to zero
+          command = wheel::aim(1000);
           serial_write(command);
           
           // Stop the robot
@@ -408,5 +413,10 @@ bool StateMachine::blue_is_primary(){
 
 bool StateMachine::pink_is_primary(){
   return primary_basket == PINK;
+}
+
+
+void StateMachine::set_primary_basket(basket_t basket){
+  primary_basket = basket;
 }
 // TODO: kui nurk on positiivne siis pööra paremale

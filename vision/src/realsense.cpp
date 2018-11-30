@@ -31,7 +31,7 @@ Scalar lowerBall;
 Scalar upperBasket;
 Scalar lowerBasket;
 output_t output_type = DEF;
-basket_t basket_type = BLUE;
+basket_t basket_type = BLUE; 
 bool display_contours = false;
 Point mouse(0,0);
 int frameCount = 0;
@@ -84,6 +84,32 @@ bool ball_checker(){
     
 }
 
+bool ball_out_of_bounds(Mat& frame, int x, int y){
+    return false;
+    bool black_found = false;
+    int line_diff = 0;
+
+    for(int i = y; i < 640; i++){
+        int val = frame.at<int>(x, i);
+
+        if(val < 30){
+            black_found = true;
+        }else if(val > 220){
+            if(black_found){
+                return true;
+            }
+        }else{
+            if(black_found) {
+                line_diff++;
+                if(line_diff > 3){
+                    black_found = false;
+                }
+            }
+        }
+    }
+    return false;
+}
+
 Mat threshold_calculator(Mat& frame){
     Scalar upper_first = upperBasket;
     Scalar lower_first = lowerBasket;
@@ -122,6 +148,7 @@ void ball_detection(image_transport::Publisher& pub, ros::Publisher& ballPub){
     
     Mat frame = color.first;
     Mat dframe = depth.first;
+    Mat gsframe;
     
     rotate(frame, frame, ROTATE_90_CLOCKWISE);
 
@@ -156,13 +183,18 @@ void ball_detection(image_transport::Publisher& pub, ros::Publisher& ballPub){
     float largestRadius = 0;
     int foundCount = 0;
     
+    cvtColor(frame, gsframe, CV_RGB2GRAY);
+    
     for( int i = 0; i< contours.size(); i++ ){
         if(radius[i] < 3 ) continue;//|| radius[i] > 55 || center[i].y < 100) continue;
         if(polsby_doppler(contours[i]) < 0.7) continue;
+
         foundCount++;
         if(radius[i] > largestRadius){
-            largestIndex = i;
-            largestRadius = radius[i];
+            if(!ball_out_of_bounds(gsframe, center[i].x, center[i].y)){
+                largestIndex = i;
+                largestRadius = radius[i];
+            }
         }
         if(display_contours) drawContours(frame, contours_poly, i, Scalar(0, 0, 255), 2, 8, vector<Vec4i>(), 0, Point() );
         
