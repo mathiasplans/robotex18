@@ -346,6 +346,9 @@ substate_t StateMachine::get_substate(state_t superstate){
 }
 
 void StateMachine::set_state(state_t superstate){
+  // destruct state data
+
+
   state = superstate;
 }
 
@@ -428,5 +431,9 @@ void StateMachine::set_primary_basket(basket_t basket){
 void StateMachine::send_motor(double x, double y, double phi) {
   std::string command = wheel::to_speed_str(wheel::to_motor(x, y, phi));
   serial_write(command);
+}
+
+bool StateMachine::move_to_pos(double x, double y, double phi) {
+    return false;
 }
 // TODO: kui nurk on positiivne siis pööra paremale

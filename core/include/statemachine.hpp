@@ -54,6 +54,7 @@ typedef enum{
   PINK   ///<
 }basket_t;
 
+
 /**
  * The class for the main State Machine of the robot
  */
@@ -88,7 +89,12 @@ private:
   state_t state = IDLE;                   ///< The internal state of the state machine. For details, refer to state_t
   substate_t substate[NUMBER_OF_STATES];  ///< An array of substates. The superstates are the indices of this array.
 
-  /* ROS variables */
+    /* Classes for storing data of one state */
+    struct State              { virtual ~State() {} };
+    struct SearchBall : State { ros::Timer timer;   };
+
+
+        /* ROS variables */
   ros::Publisher publisher;    ///< Publisher object for serial node
   ros::Rate command_delay;     ///< Delay between sending the commands
   ros::NodeHandle& ros_node;   ///< Reference to ROS Node Handle object
@@ -135,6 +141,15 @@ private:
    * Returns true when the task is complete
    */
   bool search_for_basket();
+
+  /**
+   * Tries to move towards the position specified in arguments in the map coordinate frame.
+   * @param x global position. 0 is center of field. positive towards the pink goal
+   * @param y global position. 0 is center of field. positive upwards
+   * @param phi global position. 0 is facing the pink goal.
+   * @return false when haven't reached the position yet, true when there.
+   */
+  bool move_to_pos(double x, double y, double phi);
 
   /**
    * Sets new motor speeds for robot to try to move with. Using m/s units.
