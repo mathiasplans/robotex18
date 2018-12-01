@@ -26,7 +26,7 @@ std::string to_lower(std::string str) {
 }
 
 int get_state_ix(std::string s) {
-  for (int i = 0; i < 8; ++i) {
+  for (int i = 0; i < state_names.size(); ++i) {
     if (state_names[i] == s) {
       return i;
     }

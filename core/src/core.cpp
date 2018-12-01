@@ -3,6 +3,7 @@
 #include "vision/BasketRelative.h"
 #include "serial/Ref.h"
 #include "serial/WheelSpeed.h"
+
 #include "core/Command.h"
 #include <boost/bind.hpp>
 #include <boost/ref.hpp>
@@ -19,6 +20,9 @@
 #include <localization/BasketAngle.h>
 #include <std_msgs/String.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <nav_msgs/Odometry.h>
+
+#include <tf/transform_datatypes.h>
 
 #include <poll.h>
 #include <regex>
@@ -143,6 +147,22 @@ void localization_position_callback(const geometry_msgs::PoseWithCovarianceStamp
   // float distance_from_basket = std::sqrt(std::pow(basket_x - msg.pose.pose.position.x, 2) + std::pow(basket_y - msg.pose.pose.position.y, 2));
 }
 
+
+void handle_odometry(const nav_msgs::Odometry::ConstPtr& msg, StateMachine& sm) {
+
+  tf::Quaternion q_orig;
+  quaternionMsgToTF(msg->pose.pose.orientation , q_orig);
+
+  double roll, pitch, yaw; // roll and pitch should be 0 all the time
+  tf::Matrix3x3(q_orig).getRPY(roll, pitch, yaw);
+
+  sm.update_robot_position(
+          msg->pose.pose.position.x,
+          msg->pose.pose.position.y,
+          yaw
+          );
+}
+
 int main(int argc, char **argv){
 
   // Initialize ROS
@@ -170,6 +190,7 @@ int main(int argc, char **argv){
 
   ros::Subscriber loc_info = n.subscribe<localization::BasketAngle>("relativeangle", 50, boost::bind(localization_callback, _1, boost::ref(sm)));
   ros::Subscriber loc_pos = n.subscribe<geometry_msgs::PoseWithCovarianceStamped>("aruco_pose", 50, boost::bind(localization_position_callback, _1, boost::ref(sm)));
+  ros::Subscriber odom = n.subscribe<nav_msgs::Odometry>("odom", 50, boost::bind(handle_odometry, _1, boost::ref(sm)));
   ros::Subscriber basket_type = n.subscribe<std_msgs::String>("basket_type", 10, boost::bind(handle_basket, _1, boost::ref(sm)));
           std::cout << "Init finished" << std::endl;
 

@@ -41,3 +41,4 @@ robot_bridge.pem
 # IDE generated folders
 localization/src/.idea
 .vscode
+.idea

@@ -1,10 +1,14 @@
 #include <cstdint>
 #include <string>
 #include <array>
+#include "xtensor/xfixed.hpp"
+#include "utility.hpp"
 
 /**
  * Namespace for all functions related to motion of a robot
  */
+
+
 namespace wheel{
 
   /**
@@ -63,13 +67,13 @@ namespace wheel{
     /*
    * Convert euclidean speeds in m/s to motor speeds.
    */
-  std::array<int, 4> to_motor(double x, double y, double phi);
+  motor_speeds_t to_motor(move_vec_t euclidean_speeds);
 
 
     /*
    * Convert motor speeds to a string
    */
-  std::string to_speed_str(std::array<int, 4> motor_speeds);
+  std::string to_speed_str(motor_speeds_t motor_speeds);
 
 
     /**

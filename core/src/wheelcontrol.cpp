@@ -2,34 +2,23 @@
 #include "defines.hpp"
 #include "wheelcontrol.hpp"
 #include <iostream>
+#include "utility.hpp"
+#include "xtensor/xfixed.hpp"
+#include "xtensor-blas/xlinalg.hpp"
 
-#include <opencv2/core/core.hpp>
-
-using namespace cv;
-
-double coup_data[4][3] = {{-3984.15795879, -3984.15886237,  5634.45085889},
+xt::xtensor_fixed<double, xt::xshape<4,3>> coup = {{-3984.15795879, -3984.15886237,  5634.45085889},
                           {-3984.15976596,  3984.1570552 ,  5634.45085889},
                           { 3984.15615161,  3984.16066955,  5634.45085889},
                           { 3984.16157313, -3984.15524803,  5634.45085889}};
 
-Mat coup = Mat(4, 3, CV_64F, coup_data);
 
-std::array<int, 4> wheel::to_motor(double x, double y, double phi) {
-  // Turn the arguments into a matrix
-  double euclidean_speeds_data[3][1] = {{x}, {y}, {phi}};
-  Mat euclidean_speeds = Mat(3,1, CV_64F, euclidean_speeds_data);
 
-  Mat motor_speeds = coup * euclidean_speeds;
 
-  // Round and arrayify the speeds.
-  return { (int) std::round(motor_speeds.at<double>(0,0)),
-           (int) std::round(motor_speeds.at<double>(0,1)),
-           (int) std::round(motor_speeds.at<double>(0,2)),
-           (int) std::round(motor_speeds.at<double>(0,3))};
-
+motor_speeds_t wheel::to_motor(move_vec_t euclidean_speeds) {
+    return xt::linalg::dot(coup, euclidean_speeds);
 }
 
-std::string wheel::to_speed_str(std::array<int, 4> motor_speeds) {
+std::string wheel::to_speed_str(motor_speeds_t motor_speeds) {
   return "sd:" + std::to_string(motor_speeds[0]) + ":"
                + std::to_string(motor_speeds[1]) + ":"
                + std::to_string(motor_speeds[2]) + ":"

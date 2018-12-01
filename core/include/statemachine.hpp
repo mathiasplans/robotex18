@@ -6,12 +6,14 @@
 
 #include "defines.hpp"
 #include "lookup_table.hpp"
+#include "utility.hpp"
 
 /**
  * Enum of all the states in state machine
  */
 typedef enum{
   IDLE,              ///< The robot is idle, it doesn't do anything but tries to start searching for ball
+  MOVE_CENTER,
   SEARCH_BALL,       ///< The robot is searching for balls
   REPOSITION,        ///< If there aren't any balls in sight, reposition to another location for better coverage
   MOVE_TO_BALL,      ///< Once the ball is in the middle of the frame (Doesn't have to be if aproaching from an angle), move up to it
@@ -21,8 +23,9 @@ typedef enum{
   TEST
 }state_t;
 
-static std::array<std::string, 8> state_names = {
+static std::array<std::string, 9> state_names = {
         "idle",
+        "move_center",
         "search_ball",
         "reposition",
         "move_to_ball",
@@ -73,6 +76,7 @@ private:
   float basket_angle_primary;  ///< Relative angle to the blue basket, a.k.a angle between robot's peripheral view and the basket
   float basket_angle_secondary;  ///< Relative angle to the pink basket, a.k.a angle between robot's peripheral view and the basket
   basket_t primary_basket;  ///< The type of target basket. Can be BLUE or PINK
+  move_vec_t robot_position;
 
   /* Variables which determine the decisions of the robot */
   bool throw_completed = false;  ///< True if a throw was a success
@@ -90,8 +94,8 @@ private:
   substate_t substate[NUMBER_OF_STATES];  ///< An array of substates. The superstates are the indices of this array.
 
     /* Classes for storing data of one state */
-    struct State              { virtual ~State() {} };
-    struct SearchBall : State { ros::Timer timer;   };
+    struct State              { virtual ~State() {} }state_data;
+    struct SearchBall : State { move_vec_t end_pos;  };
 
 
         /* ROS variables */
@@ -149,7 +153,9 @@ private:
    * @param phi global position. 0 is facing the pink goal.
    * @return false when haven't reached the position yet, true when there.
    */
-  bool move_to_pos(double x, double y, double phi);
+  bool move_to_pos(move_vec_t position);
+
+  bool move_to_pos_local(move_vec_t delta);
 
   /**
    * Sets new motor speeds for robot to try to move with. Using m/s units.
@@ -157,7 +163,7 @@ private:
    * @param y velocity in the y axis. positive to upwards (when pink is right and blue is left
    * @param phi angular velocity
    */
-  void send_motor(double x, double y, double phi);
+  void move(move_vec_t speeds);
 
 public:
   /**
@@ -202,7 +208,7 @@ public:
    * Change the state of the State Machine
    */
   void set_state(
-    state_t superstate  ///< State will be set to this
+    state_t new_state  ///< State will be set to this
   );
 
   /**
@@ -286,6 +292,8 @@ public:
     int height  ///< Height of the camera's frame
   );
 
+  void update_robot_position(double x, double y, double phi);
+
   void set_basket_dist(
     int dist
   );
@@ -314,4 +322,6 @@ public:
    *
    */
   bool pink_is_primary();
+
+    double to_rad(double deg);
 };

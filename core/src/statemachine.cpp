@@ -2,12 +2,18 @@
 #include "statemachine.hpp"
 #include "wheelcontrol.hpp"
 #include "lookup_table.hpp"
+#include "../include/statemachine.hpp"
+
+#include "xtensor/xvectorize.hpp"
+#include "xtensor/xio.hpp"
+
 
 #include <cstdio>
 #include <cerrno>
 #include <termios.h>
 #include <cstring>
 #include <iostream>
+#include <algorithm>
 #include <fcntl.h>
 
 #include <cstdlib>
@@ -70,12 +76,35 @@ void StateMachine::state_machine(void){
 
       break;
 
+      // aruco marker data is currently way too unstable to use as global position
+    /*case MOVE_CENTER:
+
+        // if we're at the correct position
+      if (move_to_pos_global(xt::xfixed_container<double, xt::xshape<3,1>>({{0}, {0}, {0}}))) {
+          ROS_INFO("Entering SEARCH_BALL state");
+          set_state(SEARCH_BALL);
+      }
+      break;
+      */
+
     case SEARCH_BALL:
       // If the robot hasn't found a ball yet
       if(ball_position_x < 0){
         // Circle around til a ball is found
-        command = wheel::move(0, 0, SPIN_SEARCH_SPEED);
-        serial_write(command);
+        // TODO
+        SearchBall* data = static_cast<SearchBall*> (&state_data);
+        if(move_to_pos(data->end_pos)) {
+          // stopping for 0.5 sec
+          std::cout << "am here\n";
+          ros_node.createTimer(ros::Duration(0.5),
+                  [this](auto e){
+                    ROS_INFO("Entering SEARCH_BALL state");
+                    this->set_state(SEARCH_BALL);
+                  }, true);
+
+        }
+//        command = wheel::move(0, 0, SPIN_SEARCH_SPEED);
+//        serial_write(command);
       }
 
       // If then robot has found a ball, move to it
@@ -336,20 +365,32 @@ StateMachine::StateMachine(ros::Publisher& topic, ros::NodeHandle& node, basket_
   throwing_timer.stop();
   throwing_timer.setPeriod(ros::Duration(THROW_TIME));
   reset_substates();
+  robot_position = {{0}, {0}, {0}};
 }
 state_t StateMachine::get_state(){
   return state;
+
 }
 
 substate_t StateMachine::get_substate(state_t superstate){
   return substate[superstate];
 }
 
-void StateMachine::set_state(state_t superstate){
-  // destruct state data
+void StateMachine::set_state(state_t new_state){
+  state = new_state;
 
+  // since we have no constructors, init data for state here
+  if (new_state == SEARCH_BALL) {
 
-  state = superstate;
+    move_vec_t rotate40 {{0},{0},{ ::to_rad(40) }};
+    move_vec_t end_pos = robot_position + rotate40;
+
+    SearchBall data;
+    data.end_pos = end_pos;
+    state_data = data;
+  } else {
+    state_data = State();
+  }
 }
 
 void StateMachine::set_substate(state_t superstate, substate_t new_substate){
@@ -428,12 +469,36 @@ void StateMachine::set_primary_basket(basket_t basket){
   primary_basket = basket;
 }
 
-void StateMachine::send_motor(double x, double y, double phi) {
-  std::string command = wheel::to_speed_str(wheel::to_motor(x, y, phi));
+// TODO: kui nurk on positiivne siis pööra paremale
+
+bool StateMachine::move_to_pos(move_vec_t position) {
+  auto delta = position - robot_position;
+  return move_to_pos_local(delta);
+}
+
+bool StateMachine::move_to_pos_local(move_vec_t delta) {
+
+    // we are epsilon=5cm close to the point we want to reach
+
+    std::cout << delta << "\n";
+    if (xt::all(xt::fabs(delta) < 0.05)) {
+      return true;
+    }
+
+    auto max_speed = 0.1;
+    auto speeds = xt::fmax(delta, max_speed);
+
+    // move the robot
+    move(speeds);
+
+    return false;
+}
+
+void StateMachine::move(move_vec_t speeds) {
+  std::string command = wheel::to_speed_str(wheel::to_motor(speeds));
   serial_write(command);
 }
 
-bool StateMachine::move_to_pos(double x, double y, double phi) {
-    return false;
+void StateMachine::update_robot_position(double x, double y, double phi) {
+  robot_position = {{x}, {y}, {phi}};
 }
-// TODO: kui nurk on positiivne siis pööra paremale
