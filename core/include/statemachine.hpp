@@ -78,6 +78,8 @@ private:
 
   /* Aiming variables */
   int basket_dist = -1;
+  int angle = -1;
+  bool has_angle = false;
 
   /* Serial Communication */
   int serial;  ///< Handle of the serial port
@@ -102,16 +104,6 @@ private:
    * It is vital that after reading the throw_completed, it should be reset back to false
    */
   void complete_throw(const ros::TimerEvent&);
-
-
-
-  /* Lookup table functions */
-  /**
-   * Looks up the thrower configuration according to the distace from lookup table
-   */
-  throw_info_t look_up(
-    int distance  ///< Distance between a ball and a basket
-  );
 
   /* Control of the movement and actions */
   /**
@@ -143,6 +135,14 @@ private:
    * Returns true when the task is complete
    */
   bool search_for_basket();
+
+  /**
+   * Sets new motor speeds for robot to try to move with. Using m/s units.
+   * @param x velocity in the x axis. positive is towards the pink goal
+   * @param y velocity in the y axis. positive to upwards (when pink is right and blue is left
+   * @param phi angular velocity
+   */
+  void send_motor(double x, double y, double phi);
 
 public:
   /**
@@ -247,9 +247,7 @@ public:
   /**
    * Set the variables before the throwing commences
    */
-  void configure_thrower(
-    const throw_info_t& throw_parameters  ///< Struct which contains the aimer arc and thrower power
-  );
+  void configure_thrower(const int throw_power, const int aimer_position);
 
   /**
    * Resets the aimer and thrower to default value

@@ -1,5 +1,6 @@
 #include <cstdint>
 #include <string>
+#include <array>
 
 /**
  * Namespace for all functions related to motion of a robot
@@ -59,7 +60,19 @@ namespace wheel{
    */
   std::string stop();
 
-  /**
+    /*
+   * Convert euclidean speeds in m/s to motor speeds.
+   */
+  std::array<int, 4> to_motor(double x, double y, double phi);
+
+
+    /*
+   * Convert motor speeds to a string
+   */
+  std::string to_speed_str(std::array<int, 4> motor_speeds);
+
+
+    /**
    * Get the command for setting the speef of the thrower
    */
   std::string thrower(

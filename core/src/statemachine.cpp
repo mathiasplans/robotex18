@@ -223,12 +223,18 @@ void StateMachine::state_machine(void){
       serial_write(command);
 
       break;
-    
+
 
 
     case THROW:
       // The ball is not thrown yet but we are getting close!
-      configure_thrower(look_up(basket_dist));
+
+      // Do not change the angle after we've first set it.
+      if (!has_angle) { // TODO test
+        angle = getAngleForDist(basket_dist);
+        has_angle = true;
+      }
+      configure_thrower(getSpeedForDistAndAngle(basket_dist, angle), angle);
       if(substate[THROW] == THROW_AIM){
         // Configure the thrower
 
@@ -265,6 +271,10 @@ void StateMachine::state_machine(void){
         if(throw_completed){
           // Reset the throw_complete state
           throw_completed = false;
+
+          // reset aimer
+          has_angle = false;
+          angle = -1;
           
           // Stop the thrower
           command = wheel::thrower(1000);
@@ -327,11 +337,6 @@ StateMachine::StateMachine(ros::Publisher& topic, ros::NodeHandle& node, basket_
   throwing_timer.setPeriod(ros::Duration(THROW_TIME));
   reset_substates();
 }
-
-throw_info_t StateMachine::look_up(int distance){
-  return getSpeedForDist(distance);
-}
-
 state_t StateMachine::get_state(){
   return state;
 }
@@ -392,9 +397,9 @@ void StateMachine::set_aimer_position(uint16_t angle) {
   serial_write(command);
 }
 
-void StateMachine::configure_thrower(const throw_info_t& throw_parameters){
-  set_throw_power(throw_parameters.dist);
-  set_aimer_position(throw_parameters.angle);
+void StateMachine::configure_thrower(const int throw_power, const int aimer_position){
+  set_throw_power(throw_power);
+  set_aimer_position(aimer_position);
 }
 
 void StateMachine::deaim(){
@@ -418,5 +423,10 @@ bool StateMachine::pink_is_primary(){
 
 void StateMachine::set_primary_basket(basket_t basket){
   primary_basket = basket;
+}
+
+void StateMachine::send_motor(double x, double y, double phi) {
+  std::string command = wheel::to_speed_str(wheel::to_motor(x, y, phi));
+  serial_write(command);
 }
 // TODO: kui nurk on positiivne siis pööra paremale

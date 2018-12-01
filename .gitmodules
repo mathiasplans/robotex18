@@ -15,3 +15,6 @@
 	path = localization
   url = https://github.com/jyrgenlaks/Robotex2018-localization.git
   ignore = all
+[submodule "xtensor_ros"]
+	path = xtensor_ros
+	url = https://github.com/wolfv/xtensor_ros

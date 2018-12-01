@@ -130,6 +130,19 @@ inline int getSpeedForDistAndAngle(int dist, int angle){
  * Gets the desired thrower BLDC speed and angle in microseconds for
  * the given distance or -1 for both if the values cannot be found
 */
+
+inline int getAngleForDist(int dist_mm) {
+    dist_mm += 50;
+    if(dist_mm < 1000){
+        return 1152;
+    }else if(dist_mm < 2800){
+        return 1500;
+    }else if(dist_mm < 3600){
+        return 1700;
+    }else{
+        return -1;
+    }
+}
 inline throw_info_t getSpeedForDist(int dist_mm){
     // A wonderful hack made by Jürgen. Remove this once the main logic has been fixed!
     dist_mm += 50;

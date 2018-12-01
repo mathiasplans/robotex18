@@ -8,15 +8,18 @@ find_package(catkin REQUIRED COMPONENTS
   vision
   genmsg
   serial
+  cv_bridge
 )
 
 find_package(Boost REQUIRED)
 
+find_package(OpenCV 3 REQUIRED)
+
 include_directories(
-  include/
   ${Boost_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
-  ${Boost_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
+  include/
 )
 
 add_message_files(FILES Command.msg)
@@ -31,4 +34,5 @@ add_dependencies(core core_generate_messages_cpp)
 target_link_libraries(
   core
   ${catkin_LIBRARIES}
+  ${OpenCV_LIBS}
 )
