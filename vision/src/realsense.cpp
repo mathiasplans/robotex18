@@ -116,7 +116,7 @@ Mat threshold_calculator(Mat& frame){
     Scalar upper_second = upperBasket;
     Scalar lower_second = lowerBasket;
 
-    if(basket_type == PINK){ // Basket is magenta??
+    if(false && basket_type == PINK){ // Basket is magenta??
         upper_first[0] = 180;
         // upper_first = Scalar(180, 0, 0) + upperBasket * Scalar(0, 1, 1);
         lower_first[0] = upperBasket[0];

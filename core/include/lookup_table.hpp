@@ -50,7 +50,7 @@ typedef struct{
 };*/
 
 //New lookup table as of 30.11.2018
-static vector< vector<int> > speeds_table = {
+/*static vector< vector<int> > speeds_table = {
     //dist, speed, angle
     {1605,  1500,   1500},
     {1185,  1390,   1500},
@@ -71,7 +71,28 @@ static vector< vector<int> > speeds_table = {
     {564,   1395,   1152},
     {313,   1325,   1152},
     {1001,  1545,   1152}
+};*/
+
+
+static vector< vector<int> > speeds_table = {
+    //dist, speed, angle
+    {820,   1675,   1152},
+    {580,   1605,   1152},
+    {360,   1520,   1152},
+    {1105,  1730,   1152},
+    {835,   1520,   1500},
+    {1290,  1605,   1500},
+    {1655,  1660,   1500},
+    {1915,  1700,   1500},
+    {2260,  1750,   1500},
+    {2735,  1815,   1500},
+    {2925,  1850,   1500},
+    {2665,  1765,   1700},
+    {2905,  1790,   1700},
+    {3200,  1820,   1700},
+    {3340,  1860,   1700}
 };
+
 //search: (\d+)\s(\d+)\s(\d+)
 //replace: {\1, \2, \3},
 
@@ -132,7 +153,7 @@ inline int getSpeedForDistAndAngle(int dist, int angle){
 */
 inline throw_info_t getSpeedForDist(int dist_mm){
     // A wonderful hack made by Jürgen. Remove this once the main logic has been fixed!
-    dist_mm += 50;
+    // dist_mm += 50;
 
     if(dist_mm < 1000){
         return (throw_info_t) { 1152, getSpeedForDistAndAngle(dist_mm, 1152) };
